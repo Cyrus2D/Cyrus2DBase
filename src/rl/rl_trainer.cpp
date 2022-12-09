@@ -275,6 +275,5 @@ RLTrainer::doReset()
                       move_pos,
                       uni03() * 360.0 - 180.0 );
     }
-    sendResetMessage();
     M_counter = -1;
 }
