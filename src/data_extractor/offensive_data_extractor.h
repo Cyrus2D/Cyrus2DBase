@@ -49,7 +49,7 @@ private:
     std::vector<double> data;
 
 public:
-
+    static int player_port;
     OffensiveDataExtractor();
 
     ~OffensiveDataExtractor();

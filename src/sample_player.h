@@ -49,7 +49,6 @@ public:
 
     virtual
     ~SamplePlayer();
-    static int player_port;
 
 protected:
 

@@ -53,7 +53,7 @@
 #include "view_tactical.h"
 
 #include "intention_receive.h"
-
+#include "data_extractor/offensive_data_extractor.h"
 #include <rcsc/action/basic_actions.h>
 #include <rcsc/action/bhv_emergency.h>
 #include <rcsc/action/body_go_to_point.h>
@@ -90,7 +90,6 @@ using namespace rcsc;
 /*!
 
  */
-int SamplePlayer::player_port = 0;
 
 SamplePlayer::SamplePlayer()
     : PlayerAgent(),
@@ -220,7 +219,7 @@ SamplePlayer::initImpl( CmdLineParser & cmd_parser )
 void
 SamplePlayer::actionImpl()
 {
-    SamplePlayer::player_port = this->config().port();
+    OffensiveDataExtractor::player_port = this->config().port();
     if ( this->audioSensor().trainerMessageTime() == world().time() )
     {
         std::cerr << world().ourTeamName() << ' ' << world().self().unum()

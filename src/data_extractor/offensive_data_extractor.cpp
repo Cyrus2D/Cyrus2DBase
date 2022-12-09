@@ -25,6 +25,7 @@ bool OffensiveDataExtractor::active = false;
 
 using namespace rcsc;
 
+int OffensiveDataExtractor::player_port = 0;
 
 OffensiveDataExtractor::OffensiveDataExtractor() :
         last_update_cycle(-1) {
@@ -63,7 +64,7 @@ void OffensiveDataExtractor::init_file(DEState &state) {
     std::string dir = "/data1/nader/workspace/robo/base_data/";
     strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H-%M-%S", timeinfo);
     std::string str(buffer);
-    std::string rand_name = std::to_string(SamplePlayer::player_port);
+    std::string rand_name = std::to_string(OffensiveDataExtractor::player_port);
     str += "_" + std::to_string(state.wm().self().unum()) + "_" + state.wm().theirTeamName() + "_E" + rand_name + ".csv";
 
     fout = std::ofstream((dir + str).c_str());
