@@ -17,7 +17,7 @@ RLClient * RLClient::i(){
     return instant;
 }
 
-std::vector<double> RLClient::player_send_request_and_get_response(int num, long cycle, vector<double> features)
+std::vector<double> RLClient::player_send_request_and_get_response(int num, long cycle, vector<double> features) const
 {
     send_player_request(num, cycle, std::move(features));
     return get_player_response(num, cycle);
