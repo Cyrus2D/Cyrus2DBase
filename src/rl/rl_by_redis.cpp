@@ -23,13 +23,13 @@ std::vector<double> RLClient::player_send_request_and_get_response(int num, long
     return get_player_response(num, cycle);
 }
 
-void RLClient::send_player_request(int num, long cycle, vector<double> features)
+void RLClient::send_player_request(int num, long cycle, vector<double> features) const
 {
-    string key = M_player_request_pre_pose + "_" + to_string(num) + "_" + to_string(cycle);
+    string key = M_request_pre_pose + "_" + to_string(num) + "_" + to_string(cycle);
     M_redis_client->rpush(key, features.begin(), features.end());
 }
 
-std::vector<double> RLClient::get_player_response(int num, long cycle)
+std::vector<double> RLClient::get_player_response(int num, long cycle) const
 {
     string key = M_response_pre_pose + "_" + to_string(num) + "_" + to_string(cycle);
     rcsc::Timer start_time = rcsc::Timer();
@@ -41,7 +41,7 @@ std::vector<double> RLClient::get_player_response(int num, long cycle)
             vector<string > keys;
             M_redis_client->keys("*", std::back_inserter(keys));
             for (auto &k:keys){
-                if(k.find("resp_" + to_string(num)) != std::string::npos)
+                if(k.find(M_response_pre_pose + "_" + to_string(num)) != std::string::npos)
                 {
                     M_redis_client->del(key);
                 }
@@ -63,10 +63,10 @@ std::vector<double> RLClient::get_player_response(int num, long cycle)
     return res;
 }
 
-void RLClient::send_trainer_reward(int num, long cycle, vector<double> done_rewards) const
+void RLClient::send_trainer_status_reward(int num, long cycle, vector<double> status_rewards) const
 {
-    string key = M_player_request_pre_pose + "_" + to_string(num) + "_" + to_string(cycle);
-    M_redis_client->rpush(key, done_rewards.begin(), done_rewards.end());
+    string key = M_request_pre_pose + "_" + to_string(num) + "_" + to_string(cycle);
+    M_redis_client->rpush(key, status_rewards.begin(), status_rewards.end());
 }
 
 void RLClient::wait_for_python(int num, long cycle) const

@@ -187,7 +187,7 @@ RLTrainer::doRL()
     auto status_rewards = status_rewards_done.first;
     bool done = status_rewards_done.second;
     M_counter += 1;
-    RLClient::i()->send_trainer_reward(0, world().time().cycle(), status_rewards);
+    RLClient::i()->send_trainer_status_reward(0, world().time().cycle(), status_rewards);
     RLClient::i()->wait_for_python(0, world().time().cycle());
     if (done)
     {
