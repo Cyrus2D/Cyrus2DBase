@@ -260,12 +260,13 @@ RLPlayer::actionImpl()
         dlog.addText( Logger::TEAM,
                       __FILE__": preprocess done" );
         // send fake message and receive fake message to go to the next cycle.
-        RLClient::i()->player_send_request_and_get_response(world().self().unum(), world().time().cycle());
+        RLClient::i()->player_send_request_and_get_response(world().self().unum(),world().time().cycle(), 1);
         return;
     }
 
     SimpleRLAgent * ag = SimpleRLAgent::i();
     ag->do_action(this);
+    Neck_TurnToBall().execute(this);
     return;
 
     //
@@ -288,7 +289,7 @@ RLPlayer::actionImpl()
                       << " Error. Role is not registerd.\nExit ..."
                       << std::endl;
             M_client->setServerAlive( false );
-            RLClient::i()->player_send_request_and_get_response(1, world().time().cycle());
+            RLClient::i()->player_send_request_and_get_response(1, 1,world().time().cycle());
             return;
         }
     }
@@ -322,7 +323,7 @@ RLPlayer::actionImpl()
         dlog.addText( Logger::TEAM,
                       __FILE__": penalty kick" );
         Bhv_PenaltyKick().execute( this );
-        RLClient::i()->player_send_request_and_get_response(1, world().time().cycle());
+        RLClient::i()->player_send_request_and_get_response(1, 1,world().time().cycle());
         return;
     }
 
@@ -330,7 +331,7 @@ RLPlayer::actionImpl()
     // other set play mode
     //
     Bhv_SetPlay().execute( this );
-    RLClient::i()->player_send_request_and_get_response(1, world().time().cycle());
+    RLClient::i()->player_send_request_and_get_response(1, 1,world().time().cycle());
 }
 
 /*-------------------------------------------------------------------*/

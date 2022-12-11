@@ -175,8 +175,10 @@ RLTrainer::doRL()
 {
     static bool started = false;
     const CoachPlayerObject * player = world().teammate(1);
-    if (player == nullptr || player->unum() != 1)
+    if (player == nullptr || player->unum() != 1){
         return;
+    }
+
     if (!started)
     {
         started = true;
@@ -188,7 +190,7 @@ RLTrainer::doRL()
     bool done = status_rewards_done.second;
     M_counter += 1;
     RLClient::i()->send_trainer_status_reward(0, world().time().cycle(), status_rewards);
-    RLClient::i()->wait_for_python(0, world().time().cycle());
+    RLClient::i()->wait_for_python(0, world().time().cycle(), status_rewards);
     if (done)
     {
         doReset();
@@ -212,7 +214,7 @@ RLTrainer::calcRewards()
     rcsc::Vector2D ball_pos = world().ball().pos();
     const CoachPlayerObject * player = world().teammate(1);
     rcsc::Vector2D player_pos = player->pos();
-    Vector2D target_pos(0, 0);
+    Vector2D target_pos = world().ball().pos();
     double diff_dist = 0.0;
     if (M_last_pos.isValid())
         diff_dist = M_last_pos.dist(target_pos) - player_pos.dist(target_pos);
@@ -260,8 +262,8 @@ RLTrainer::doReset()
 {
     doRecover();
     // move ball to center
-    doMoveBall( Vector2D( -10.0, -30.0 ),
-                Vector2D( 0.0, 0.0 ) );
+//    doMoveBall( Vector2D( -10.0, -30.0 ),
+//                Vector2D( 0.0, 0.0 ) );
     // change playmode to play_on
     doChangeMode( PM_PlayOn );
     {
@@ -274,6 +276,10 @@ RLTrainer::doReset()
                       1, // uniform number
                       move_pos,
                       uni03() * 360.0 - 180.0 );
+        UniformReal uni04( 0.0, 1.0 );
+        UniformReal uni05( 0.0, 1.0 );
+        doMoveBall(Vector2D(uni01() * 105.0 - 52.5, uni02() * 68.0 - 34.0),
+                   Vector2D(0, 0));
     }
     M_counter = -1;
 }

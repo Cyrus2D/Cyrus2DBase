@@ -8,5 +8,8 @@ std::vector<double> RLFeatureGen::feature_generator(const rcsc::WorldModel & wm)
     res.push_back(wm.self().pos().r() / 150.0);
     res.push_back(wm.self().pos().th().degree() / 180.0);
     res.push_back(wm.self().body().degree() / 180.0);
+    res.push_back(wm.ball().pos().r() / 150.0);
+    res.push_back(wm.ball().pos().th().degree() / 180.0);
+    res.push_back((wm.ball().pos() - wm.self().pos()).th().degree() / 180.0);
     return res;
 }

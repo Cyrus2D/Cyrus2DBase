@@ -23,10 +23,10 @@ public:
     static RLClient * instant;
     RLClient();
     static RLClient * i();
-    std::vector<double> player_send_request_and_get_response(int num, long cycle, vector<double> features=vector<double>{-1}) const;
+    std::vector<double> player_send_request_and_get_response(int num, long cycle, unsigned long msg_size, vector<double> features=vector<double>{-1}) const;
     void send_player_request(int num, long cycle, vector<double> features) const;
-    std::vector<double> get_player_response(int num, long cycle) const;
+    std::vector<double> get_player_response(int num, long cycle, unsigned long msg_size) const;
     void send_trainer_status_reward(int num, long cycle, vector<double> status_rewards) const;
-    void wait_for_python(int num, long cycle) const;
+    void wait_for_python(int num, long cycle, vector<double> status_rewards) const;
 };
 #endif //HELIOS_BASE_RL_BY_REDIS_H
