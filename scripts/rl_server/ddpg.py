@@ -229,22 +229,21 @@ class DeepAC:
         assert action.shape == (1,)
         return action
 
-    def get_random_action(self, state, patch_number, p_rnd=None):
-        # if p_rnd is None:
-        #     max_number = patch_number_max
-        #     number = patch_number
-        #     max_number = max_number / 2
-        #     max_number = min(max_number, 25000)
-        #     if number > max_number:
-        #         p_rnd = 0.1
-        #     else:
-        #         p_rnd = 1.0 + number / max_number * -0.9
+    def get_random_action(self, state, patch_number, patch_number_max, p_rnd=None):
+        if p_rnd is None:
+            max_number = patch_number_max
+            number = patch_number
+            max_number = max_number / 2
+            if number > max_number:
+                p_rnd = 0.1
+            else:
+                p_rnd = 1.0 + number / max_number * -0.9
         best_action = self.get_best_action(state)
         if random.random() < p_rnd:
             # noise = self.random_process.sample()
             # assert noise.shape == best_action.shape
             # best_action += noise
-            best_action = np.array([random.random()])
+            best_action = np.array([random.random() * 2.0 - 1.0])
         return best_action
 
     def add_to_buffer(self, state, action, reward, next_state=None):
