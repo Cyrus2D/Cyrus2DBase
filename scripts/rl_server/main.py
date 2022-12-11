@@ -133,6 +133,8 @@ def end_function():
     f.write('\n'.join([str(i) for i in latest_episode_rewards]))
     while True:
         time.sleep(1)
+
+
 i = 0
 cycle = None
 while True:
@@ -179,14 +181,15 @@ while True:
     #     training_cycles.append(cycle)
     # else:
     #     testing_cycles.append(cycle)
-    pre_num_cycle, values = rd.get_from_wait(1, cycle, wait_time_second=0.5)
+
+    pre_num_cycle, values = rd.get_from_wait(1, [6, 1], cycle, wait_time_second=0.5)
     if pre_num_cycle is not None:
         if len(values) == 1:  # Fake
             rd.set(pre_num_cycle, [0])
         else:
             # print(pre_num_cycle, values)
             add_player_info(pre_num_cycle, values)
-            action_arr = rl.get_random_action(values, patch_number, 0.2 if is_train else 0.0)
+            action_arr = rl.get_random_action(values, patch_number, patch_number_max, None if is_train else 0.0)
             action_tmp = action_arr.tolist()
             action = []
             for a in action_tmp:
