@@ -139,7 +139,11 @@ i = 0
 cycle = None
 while True:
     # print('#'*100, cycle)
-    pre_num_cycle, values = rd.get_from_wait(0, cycle)
+    pre_num_cycle, values = rd.get_from_wait(0, [2], cycle, 1)
+    if pre_num_cycle is None and cycle is None:
+        continue
+    if pre_num_cycle is None:
+        rd.set(RedisServer.FROM_AGENT_PRE_POSE + '_' + str(0) + '_' + str(cycle), [1])
     if pre_num_cycle is not None:
         # print(pre_num_cycle, values)
         cycle = int(pre_num_cycle.split('_')[-1])
