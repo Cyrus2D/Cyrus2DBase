@@ -4,19 +4,37 @@
 
 #include "simple_rl_agent.h"
 #include "rl_feature_gen.h"
+#include <stdexcept>
+
 SimpleRLAgent * SimpleRLAgent::inst = nullptr;
 
 void SimpleRLAgent::do_action(rcsc::PlayerAgent * agent){
     const rcsc::WorldModel & wm = agent->world();
     auto features = RLFeatureGen().feature_generator(wm);
-    auto action = RLClient::i()->player_send_request_and_get_response(1, wm.time().cycle(), 1, features);
-    if (action.empty())
+    RLClient::i()->send_player_request(wm.self().unum(), wm.time().cycle(), std::move(features));
+    auto resp = RLClient::i()->get_message(wm.self().unum(), wm.time().cycle(), 100);
+    if (resp.is_vector){
+        auto action = resp.vector_message;
+        if (action.empty())
+        {
+            agent->doTurn(0);
+        }
+        else
+        {
+            agent->doDash(100, action[0] * 180.0);
+        }
+    }
+    else if (resp.is_string)
     {
-        agent->doTurn(0);
+        if (resp.string_message != string("OK"))
+            throw std::runtime_error("The player receives string message except \"OK\" message.");
+    }
+    else if (resp.is_number)
+    {
+        throw std::runtime_error("The response to player can not be a number.");
     }
     else
     {
-        agent->doDash(100, action[0] * 180.0);
     }
 }
 

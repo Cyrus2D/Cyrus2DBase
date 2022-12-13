@@ -40,6 +40,7 @@
 #include <rcsc/param/param_map.h>
 #include <rcsc/param/cmd_line_parser.h>
 #include <rcsc/random.h>
+#include <stdexcept>
 
 using namespace rcsc;
 
@@ -173,16 +174,16 @@ RLTrainer::handlePlayerType()
 void
 RLTrainer::doRL()
 {
-    static bool started = false;
     const CoachPlayerObject * player = world().teammate(1);
     if (player == nullptr || player->unum() != 1){
         return;
     }
-
-    if (!started)
+    RLClient::i(this->config().port());
+    if (!M_start_sent)
     {
-        started = true;
+        sendHi();
         doReset();
+        M_start_sent = true;
         return;
     }
     auto status_rewards_done = calcRewards();
@@ -190,7 +191,15 @@ RLTrainer::doRL()
     bool done = status_rewards_done.second;
     M_counter += 1;
     RLClient::i()->send_trainer_status_reward(0, world().time().cycle(), status_rewards);
-    RLClient::i()->wait_for_python(0, world().time().cycle(), status_rewards);
+//    RLClient::i()->wait_for_python(0, world().time().cycle(), status_rewards);
+    auto resp = RLClient::i()->get_message(0, world().time().cycle());
+    if (!resp.is_string)
+        throw std::runtime_error("Error: the trainer did not receive string from python.");
+    if (resp.string_message != string ("OK"))
+    {
+        throw std::runtime_error(string ("Error: doRL: the trainer did not receive \"OK\" from python. Message:") + resp.string_message);
+    }
+
     if (done)
     {
         doReset();
@@ -256,7 +265,19 @@ RLTrainer::calcRewards()
 /*!
 
  */
+void
+RLTrainer::sendHi()
+{
+    RLClient::i()->send_hi(0, to_string(world().time().cycle()));
+    auto resp = RLClient::i()->get_message(0);
+    if (!resp.is_string || resp.string_message != string ("OK"))
+        throw std::runtime_error(string ("Error: doRL: the trainer did not receive \"OK\" from python. Message:") + resp.string_message);
+}
 
+/*-------------------------------------------------------------------*/
+/*!
+
+ */
 void
 RLTrainer::doReset()
 {

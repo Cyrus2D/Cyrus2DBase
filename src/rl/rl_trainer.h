@@ -66,6 +66,7 @@ protected:
 private:
     int M_counter;
     int M_max_episode_length;
+    bool M_start_sent = false;
     rcsc::Vector2D M_last_pos = rcsc::Vector2D::INVALIDATED;
     int counter()
     {
@@ -79,6 +80,7 @@ private:
     void doRL();
     pair<vector<double>, bool> calcRewards();
     void doReset();
+    void sendHi();
     void sendResetMessage();
 };
 

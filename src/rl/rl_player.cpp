@@ -260,7 +260,10 @@ RLPlayer::actionImpl()
         dlog.addText( Logger::TEAM,
                       __FILE__": preprocess done" );
         // send fake message and receive fake message to go to the next cycle.
-        RLClient::i()->player_send_request_and_get_response(world().self().unum(),world().time().cycle(), 1);
+//        RLClient::i()->player_send_request_and_get_response(world().self().unum(),world().time().cycle(), 1);
+//        RLClient::i()->send_player_request(wm.self().unum(), wm.time().cycle(), std::move(features));
+        RLClient::i()->send_player_fake_message(world().self().unum(), world().time().cycle(), string("FAKE"));
+        auto resp = RLClient::i()->get_message(world().self().unum(), world().time().cycle());
         return;
     }
 
