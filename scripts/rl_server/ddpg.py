@@ -1,3 +1,5 @@
+import os.path
+
 from keras import models, layers, activations, optimizers, losses, metrics, regularizers
 from keras.engine.sequential import Sequential
 import random
@@ -117,7 +119,9 @@ class OrnsteinUhlenbeckProcess(AnnealedGaussianProcess):
 
 
 class DeepAC:
-    def __init__(self, buffer_size=100000, train_interval_step=1, target_update_interval_step=200):
+    def __init__(self, observation_size, action_size, buffer_size=100000, train_interval_step=1, target_update_interval_step=200):
+        self.observation_size = observation_size
+        self.action_size = action_size
         self.model_type = ''
         self.actor: Sequential = None
         self.target_actor: Sequential = None
@@ -144,18 +148,17 @@ class DeepAC:
 
     def create_model_actor_critic(self):
         self.model_type = 'param'
-        nb_actions = 1
-        input_obs = layers.Input((6,))
+        input_obs = layers.Input((self.observation_size,))
         actor = layers.Dense(20, activation='relu')(input_obs)
         actor = layers.Dense(10, activation='relu')(actor)
-        actor = layers.Dense(1, activation='tanh')(actor)
+        actor = layers.Dense(self.action_size, activation='tanh')(actor)
         actor = keras.Model(input_obs, actor)
         actor.summary()
         self.actor = actor
 
-        input_obs = layers.Input((6,), name='observation_input')
+        input_obs = layers.Input((self.observation_size,), name='observation_input')
         flattened_observation = layers.Flatten()(input_obs)
-        action_input = layers.Input(shape=(nb_actions,), name='action_input')
+        action_input = layers.Input(shape=(self.action_size,), name='action_input')
         critic = layers.Dense(20, activation='relu')(flattened_observation)
         critic = layers.Concatenate()([critic, action_input])
         critic = layers.Dense(20, activation='relu')(critic)
@@ -214,6 +217,10 @@ class DeepAC:
         self.target_actor.load_weights(trained_actor_path)
         # self.critic.load_weights(trained_critic_path)
         # self.target_critic.load_weights(trained_critic_path)
+
+    def save_weight(self, path):
+        self.actor.save_weights(os.path.join(path, '_agent_actor_w.h5'))
+        self.critic.save_weights(os.path.join(path, '_agent_critic_w.h5'))
 
     def pos_process(self, path):
         f = open(path + '_critic_history', 'w')
