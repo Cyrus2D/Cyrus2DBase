@@ -1,11 +1,22 @@
-import time
 from redis_server import RedisServer
 from ddpg import DeepAC
 import os
+import signal
+import datetime
+
 
 patch_number_max = 400
 train_episode_number_max = 100
 test_episode_number_max = 10
+done = False
+
+
+def handler(signum, frame):
+    global done
+    done = True
+
+
+signal.signal(signal.SIGINT, handler)
 
 
 class StepData:
@@ -33,25 +44,26 @@ class PythonRLTrainer:
         self.latest_episode_rewards = []
         self.data: dict[int, StepData] = {}
         self.cycle = -1
-        self.out_path = os.path.join('res', 'name_' + str(time.time()))
+        self.out_path = os.path.join('res', 'name_' + str(datetime.datetime.now().strftime('%Y%m%d%H%M%S')))
         os.makedirs(self.out_path, exist_ok=True)
         self.init_trainer()
 
-    def add_trainer_info(self, pre_num_cycle, values):
+    def add_trainer_info(self, pre_num_cycle, values, is_train):
         cycle = int(pre_num_cycle.split('_')[-1])
         is_done = int(values[0]) >= 2
         is_start = int(values[0]) == 0
         status = int(values[0])
         if is_start:
             return is_start, is_done, status, 0
-        reward_cycle = cycle - 1
-        if reward_cycle not in self.data.keys():
-            self.data[reward_cycle] = StepData()
-        self.data[reward_cycle].done = is_done
-        self.data[reward_cycle].reward = values[1]
-        if is_done:
-            self.data[reward_cycle].next_state = None
-        return is_start, is_done, status, self.data[reward_cycle].reward
+        if is_train:
+            reward_cycle = cycle - 1
+            if reward_cycle not in self.data.keys():
+                self.data[reward_cycle] = StepData()
+            self.data[reward_cycle].done = is_done
+            self.data[reward_cycle].reward = values[1]
+            if is_done:
+                self.data[reward_cycle].next_state = None
+        return is_start, is_done, status, values[1]
 
     def add_player_info(self, pre_num_cycle, values):
         cycle = int(pre_num_cycle.split('_')[-1])
@@ -95,13 +107,13 @@ class PythonRLTrainer:
             del self.data[key]
 
     def end_function(self):
-        f = open(os.path.join(self.out_path, 'training_episode_com_rewards', 'w'))
+        f = open(os.path.join(self.out_path, 'training_episode_com_rewards'), 'w')
         f.write('\n'.join([str(i) for i in self.training_episode_com_rewards]))
-        f = open(os.path.join(self.out_path, 'testing_episode_com_rewards', 'w'))
+        f = open(os.path.join(self.out_path, 'testing_episode_com_rewards'), 'w')
         f.write('\n'.join([str(i) for i in self.testing_episode_com_rewards]))
-        f = open(os.path.join(self.out_path, 'training_episode_res', 'w'))
+        f = open(os.path.join(self.out_path, 'training_episode_res'), 'w')
         f.write('\n'.join([str(i) for i in self.training_episode_res]))
-        f = open(os.path.join(self.out_path, 'testing_episode_res', 'w'))
+        f = open(os.path.join(self.out_path, 'testing_episode_res'), 'w')
         f.write('\n'.join([str(i) for i in self.testing_episode_res]))
         self.rl.save_weight(self.out_path)
 
@@ -138,12 +150,15 @@ class PythonRLTrainer:
         is_train = True
 
         while True:
+            if done:
+                self.end_function()
+                return
             pre_num_cycle, values = self.rd.get_msg_from(num=0, msg_length=[2], cycle=self.cycle, wait_time_second=1)
             if pre_num_cycle is None:
                 self.rd.set_msg(RedisServer.FROM_AGENT_PRE_POSE + '_' + str(0) + '_' + str(self.cycle), 'OK')
             if pre_num_cycle is not None:
                 self.cycle = int(pre_num_cycle.split('_')[-1])
-                is_start, is_done, status, reward = self.add_trainer_info(pre_num_cycle, values)
+                is_start, is_done, status, reward = self.add_trainer_info(pre_num_cycle, values, is_train)
                 if not is_start:
                     self.latest_episode_rewards.append(reward)
                 self.rd.set_msg(pre_num_cycle, 'OK')
@@ -176,17 +191,20 @@ class PythonRLTrainer:
                 if isinstance(msg, str):  # FAKE message
                     self.rd.set_msg(pre_num_cycle, "OK")
                 else:
-                    self.add_player_info(pre_num_cycle, msg)
+                    if is_train:
+                        self.add_player_info(pre_num_cycle, msg)
                     action_arr = self.rl.get_random_action(msg, patch_number, patch_number_max, None if is_train else 0.0)
                     action_tmp = action_arr.tolist()
                     action = []
                     for a in action_tmp:
                         action.append(float(a))
                     self.rd.set_msg(pre_num_cycle, action)
-                    self.add_player_action(pre_num_cycle, action)
+                    if is_train:
+                        self.add_player_action(pre_num_cycle, action)
             else:
                 self.response_old_message()
-            self.add_data_to_buffer(self.cycle)
+            if is_train:
+                self.add_data_to_buffer(self.cycle)
             self.cycle += 1
 
 
