@@ -233,7 +233,7 @@ class DeepAC:
         batch = [state]
         batch = array(batch)
         action = self.actor.predict_on_batch(batch).flatten()
-        assert action.shape == (1,)
+        assert action.shape == (self.action_size,)
         return action
 
     def get_random_action(self, state, patch_number, patch_number_max, p_rnd=None):
@@ -250,7 +250,7 @@ class DeepAC:
             # noise = self.random_process.sample()
             # assert noise.shape == best_action.shape
             # best_action += noise
-            best_action = np.array([random.random() * 2.0 - 1.0])
+            best_action = np.array([random.random() * 2.0 - 1.0 for i in range(self.action_size)])
         return best_action
 
     def add_to_buffer(self, state, action, reward, next_state=None):
