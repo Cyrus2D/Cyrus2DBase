@@ -151,7 +151,7 @@ class DeepAC:
         input_obs = layers.Input((self.observation_size,))
         actor = layers.Dense(20, activation='relu')(input_obs)
         actor = layers.Dense(10, activation='relu')(actor)
-        actor = layers.Dense(self.action_size, activation='tanh')(actor)
+        actor = layers.Dense(self.action_size, activation='sigmoid')(actor)
         actor = keras.Model(input_obs, actor)
         actor.summary()
         self.actor = actor
@@ -208,6 +208,9 @@ class DeepAC:
         updates += self.actor.updates
         self.actor_train_fn = K.function(state_inputs + [K.learning_phase()], [self.actor(state_inputs)], updates=updates)
 
+    def update_actor(self, received_actor):
+        self.actor.set_weights(received_actor)
+
     def read_model(self, trained_actor_path, trained_critic_path):
         actor_read = keras.models.load_model(trained_actor_path)
         self.actor.set_weights(actor_read.get_weights())
@@ -253,21 +256,27 @@ class DeepAC:
             best_action = np.array([random.random() * 2.0 - 1.0 for i in range(self.action_size)])
         return best_action
 
-    def add_to_buffer(self, state, action, reward, next_state=None):
-        self.buffer.add(Transition(state, action, reward, next_state))
+    def add_to_buffer(self, transit: Transition):
+        self.buffer.add(transit)
+        # self.step_number += 1
+        if transit.next_state is None:  # End step in episode
+            self.episode_number += 1
 
+    def add_to_buffer_and_update(self, transit: Transition):
+        self.add_to_buffer(transit)
+        self.update()
+
+    def update(self):
+        # if self.step_number % self.train_interval_step == 0:
+        self.update_from_buffer()
         self.step_number += 1
-        if self.step_number % self.train_interval_step == 0:
-            self.update_from_buffer()
         if self.target_model_update > 1 and self.step_number % self.target_update_interval_step == 0:
             self.target_critic.set_weights(self.critic.get_weights())
         if self.target_model_update > 1 and self.step_number % self.target_update_interval_step == 0:
             self.target_actor.set_weights(self.actor.get_weights())
-        if next_state is None:  # End step in episode
-            self.episode_number += 1
 
     def update_from_buffer(self):
-        transits: List[Transition] = self.buffer.get_rand(32)
+        transits: List[Transition] = self.buffer.get_rand(320)
         if len(transits) == 0:
             return
         is_image_param = False
@@ -303,7 +312,7 @@ class DeepAC:
         target_q_values = self.target_critic.predict_on_batch(state1_batch_with_action).flatten()
         discounted_reward_batch = self.gama * target_q_values
         discounted_reward_batch *= terminal1_batch
-        targets = (reward_batch + discounted_reward_batch).reshape(32, 1)
+        targets = (reward_batch + discounted_reward_batch).reshape(320, 1)
 
         state0_batch_with_action = [states_view]
         state0_batch_with_action.insert(self.critic_action_input_idx, action_batch)

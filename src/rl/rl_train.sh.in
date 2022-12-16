@@ -18,7 +18,9 @@ coach="${DIR}/sample_coach"
 trainer="${DIR}/rl_trainer"
 teamname="HELIOS"
 host="localhost"
-
+port=6000
+trainer_port=6001
+coach_port=6002
 config="${DIR}/player.conf"
 config_dir="${DIR}/formations-dt"
 
@@ -66,7 +68,30 @@ do
       teamname=$2
       shift 1
       ;;
-
+    -P|--coach-port)
+      if [ $# -lt 2 ]; then
+        usage
+        exit 1
+      fi
+      coach_port="${2}"
+      shift 1
+      ;;
+    -p|--port)
+      if [ $# -lt 2 ]; then
+        usage
+        exit 1
+      fi
+      port="${2}"
+      shift 1
+      ;;
+    -r|--trainer-port)
+      if [ $# -lt 2 ]; then
+        usage
+        exit 1
+      fi
+      trainer_port="${2}"
+      shift 1
+      ;;
     *)
       usage
       exit 1
@@ -76,7 +101,7 @@ do
   shift 1
 done
 
-OPT="-h ${host} -t ${teamname}"
+OPT="-h ${host} -t ${teamname} -p ${port}"
 OPT="${OPT} --player-config ${config} --config_dir ${config_dir}"
 OPT="${OPT} ${debugopt}"
 
@@ -94,4 +119,4 @@ OPT="${OPT} ${debugopt}"
 #  $coach -h $host -t $teamname &
 #fi
 
-$trainer -h $host -t $teamname > tr &
+$trainer -h $host -t $teamname -p $trainer_port > tr &

@@ -5,6 +5,7 @@
 #include "simple_rl_agent.h"
 #include "rl_feature_gen.h"
 #include <stdexcept>
+#include <random>
 
 SimpleRLAgent * SimpleRLAgent::inst = nullptr;
 
@@ -22,6 +23,33 @@ void SimpleRLAgent::do_action(rcsc::PlayerAgent * agent){
         else
         {
             agent->doDash(100, action[0] * 180.0);
+//            double turn_prob = action[0];
+//            double dash_prob = action[1];
+//            double turn_angle = action[2];
+//            double dash_angle = action[3];
+//            if (turn_prob + dash_prob > 0)
+//            {
+//                turn_prob /= (turn_prob + dash_prob);
+//                dash_prob /= (turn_prob + dash_prob);
+//            }
+//            else
+//            {
+//                turn_prob = 0.5;
+//                dash_prob = 0.5;
+//            }
+//
+//            std::random_device rd;
+//            std::mt19937 mt(rd());
+//            std::uniform_real_distribution<double> r(0.0, 1.0);
+//
+//            if (r(mt) < turn_prob)
+//            {
+//                agent->doTurn(turn_angle * 360.0 - 180.0);
+//            }
+//            else
+//            {
+//                agent->doDash(100, dash_angle * 360.0 - 180.0);
+//            }
         }
     }
     else if (resp.is_string)

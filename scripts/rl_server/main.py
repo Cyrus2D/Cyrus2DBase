@@ -3,9 +3,12 @@ from ddpg import DeepAC
 import os
 import signal
 import datetime
+from multiprocessing import Process, Pipe, Queue, connection
+from multiprocessing.connection import Connection
+from transit import Transition
 
 
-patch_number_max = 400
+patch_number_max = 1000
 train_episode_number_max = 100
 test_episode_number_max = 10
 done = False
@@ -29,7 +32,9 @@ class StepData:
 
 
 class PythonRLTrainer:
-    def __init__(self, db_number):
+    def __init__(self, buffer_q: Queue, model_receiver_q: Queue, db_number, start_time):
+        self.buffer_q: Queue = buffer_q
+        self.model_receiver_q: Queue = model_receiver_q
         self.player_count = 1
         self.observation_size = 6
         self.action_size = 1
@@ -44,7 +49,7 @@ class PythonRLTrainer:
         self.latest_episode_rewards = []
         self.data: dict[int, StepData] = {}
         self.cycle = -1
-        self.out_path = os.path.join('res', 'name_' + str(datetime.datetime.now().strftime('%Y%m%d%H%M%S')))
+        self.out_path = os.path.join('res', 'name_' + start_time, str(db_number))
         os.makedirs(self.out_path, exist_ok=True)
         self.init_trainer()
 
@@ -101,7 +106,8 @@ class PythonRLTrainer:
                 if key < current_cycle - 2:
                     should_remove.append(key)
                 continue
-            self.rl.add_to_buffer(self.data[key].state, self.data[key].action, self.data[key].reward, self.data[key].next_state)
+            self.buffer_q.put(Transition(self.data[key].state, self.data[key].action, self.data[key].reward, self.data[key].next_state))
+            # self.rl.add_to_buffer(Transition(self.data[key].state, self.data[key].action, self.data[key].reward, self.data[key].next_state))
             should_remove.append(key)
         for key in should_remove:
             del self.data[key]
@@ -143,6 +149,17 @@ class PythonRLTrainer:
                 self.rd.set_msg(key, 'OK')
                 self.rd.client.delete(key)
 
+    def get_and_update_actor(self):
+        received_actor = None
+        while True:
+            if self.model_receiver_q.empty():
+                break
+            received_actor = self.model_receiver_q.get()
+        if received_actor is not None:
+            print('h1')
+            self.rl.update_actor(received_actor)
+            print('h2')
+
     def run(self):
         patch_number = 0
         train_episode_number = 0
@@ -150,8 +167,10 @@ class PythonRLTrainer:
         is_train = True
 
         while True:
-            if done:
+            self.get_and_update_actor()
+            if done or patch_number % 50 == 0:
                 self.end_function()
+            if done:
                 return
             pre_num_cycle, values = self.rd.get_msg_from(num=0, msg_length=[2], cycle=self.cycle, wait_time_second=1)
             if pre_num_cycle is None:
@@ -208,5 +227,41 @@ class PythonRLTrainer:
             self.cycle += 1
 
 
-python_rl_trainer = PythonRLTrainer(1)
-python_rl_trainer.run()
+def run_manager(buffer_q: Queue, model_receiver_q: Queue, db, start_time):
+    python_rl_trainer = PythonRLTrainer(buffer_q, model_receiver_q, db, start_time)
+    python_rl_trainer.run()
+
+
+def run_model(buffer_q: Queue, all_model_sender_q: list[Queue]):
+    rl = DeepAC(observation_size=6, action_size=1, train_interval_step=1, target_update_interval_step=10)
+    rl.create_model_actor_critic()
+    for model_sender_q in all_model_sender_q:
+        model_sender_q.put(rl.actor.get_weights())
+    while True:
+        i = 0
+        while not buffer_q.empty():
+            rl.add_to_buffer(buffer_q.get())
+            i+=1
+        while i > 0:
+            rl.update()
+            i -= 1
+        if rl.step_number % 40 == 0:
+            for model_sender_q in all_model_sender_q:
+                model_sender_q.put(rl.actor.get_weights())
+
+start_time = str(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+trainer_count = 1
+queue = Queue()  # to update buffer
+queues = [Queue() for i in range(trainer_count)]  # to get actor
+ps = []
+for i in range(trainer_count):
+    p = Process(target=run_manager, args=(queue, queues[i], i + 1, start_time))
+    p.start()
+    ps.append(p)
+m = Process(target=run_model, args=(queue, queues))
+m.start()
+for p in ps:
+    p.join()
+    print('end')
+m.join()
+

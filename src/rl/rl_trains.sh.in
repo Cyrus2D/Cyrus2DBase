@@ -1,0 +1,6 @@
+#!/bin/sh
+
+./rl_train.sh -p 6000 -r 6001 &
+./rl_train.sh -p 6010 -r 6011 &
+./rl_train.sh -p 6020 -r 6021 &
+./rl_train.sh -p 6030 -r 6031 &
