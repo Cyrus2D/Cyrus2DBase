@@ -255,6 +255,7 @@ RLPlayer::actionImpl()
     //
     // special situations (tackle, objects accuracy, intention...)
     //
+    RLClient::i(this->config().port());
     if ( doPreprocess() )
     {
         dlog.addText( Logger::TEAM,
