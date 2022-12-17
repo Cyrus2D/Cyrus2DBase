@@ -1,3 +1,4 @@
+from typing import Union
 from redis_server import RedisServer
 from ddpg import DeepAC
 import os
@@ -31,14 +32,47 @@ class StepData:
         self.done = False
 
 
+from multiprocessing import Manager
+import random
+class SharedBuffer:
+    def __init__(self):
+        self.min_size = 100
+        self.size = 1000
+        self.list: list[Union[StepData, None]] = Manager().list([None for _ in range(self.size)])
+        self.index = Manager().Value('i', 0)
+        self.max_index = Manager().Value('i', 0)
+        self.step = Manager().Value('i', 0)
+        self.lock = Manager().Lock()
+
+    def add(self, data):
+        with self.lock:
+            self.step.value += 1
+            index = self.index.value
+            if index > self.max_index.value:
+                self.max_index.value = index
+            self.index.value += 1
+            self.index.value = self.index.value % self.size
+        self.list[index] = data
+
+    def get_rand(self, request_number):
+        res = []
+        if request_number <= self.min_size:
+            return res
+        number = min(request_number, self.max_index.value)
+        ran = [random.randint(0, self.max_index.value) for _ in range(number)]
+        for r in ran:
+            res.append(self.list[r])
+        return res
+
+
 class PythonRLTrainer:
-    def __init__(self, buffer_q: Queue, model_receiver_q: Queue, db_number, start_time):
-        self.buffer_q: Queue = buffer_q
+    def __init__(self, shared_buffer: SharedBuffer, model_receiver_q: Queue, db_number, start_time):
+        self.shared_buffer: SharedBuffer = shared_buffer
         self.model_receiver_q: Queue = model_receiver_q
         self.player_count = 1
         self.observation_size = 6
         self.action_size = 1
-        self.rl = DeepAC(observation_size=self.observation_size, action_size=self.action_size)
+        self.rl = DeepAC(observation_size=self.observation_size, action_size=self.action_size, shared_buffer=None)
         self.rl.create_model_actor_critic()
         self.rd = RedisServer(db_number)
         self.rd.client.flushdb()
@@ -106,7 +140,7 @@ class PythonRLTrainer:
                 if key < current_cycle - 2:
                     should_remove.append(key)
                 continue
-            self.buffer_q.put(Transition(self.data[key].state, self.data[key].action, self.data[key].reward, self.data[key].next_state))
+            self.shared_buffer.add(Transition(self.data[key].state, self.data[key].action, self.data[key].reward, self.data[key].next_state))
             # self.rl.add_to_buffer(Transition(self.data[key].state, self.data[key].action, self.data[key].reward, self.data[key].next_state))
             should_remove.append(key)
         for key in should_remove:
@@ -156,9 +190,7 @@ class PythonRLTrainer:
                 break
             received_actor = self.model_receiver_q.get()
         if received_actor is not None:
-            print('h1')
             self.rl.update_actor(received_actor)
-            print('h2')
 
     def run(self):
         patch_number = 0
@@ -227,38 +259,57 @@ class PythonRLTrainer:
             self.cycle += 1
 
 
-def run_manager(buffer_q: Queue, model_receiver_q: Queue, db, start_time):
-    python_rl_trainer = PythonRLTrainer(buffer_q, model_receiver_q, db, start_time)
+def run_manager(shared_buffer: SharedBuffer, model_receiver_q: Queue, db, start_time):
+    python_rl_trainer = PythonRLTrainer(shared_buffer, model_receiver_q, db, start_time)
     python_rl_trainer.run()
 
-
-def run_model(buffer_q: Queue, all_model_sender_q: list[Queue]):
-    rl = DeepAC(observation_size=6, action_size=1, train_interval_step=1, target_update_interval_step=10)
-    rl.create_model_actor_critic()
-    for model_sender_q in all_model_sender_q:
-        model_sender_q.put(rl.actor.get_weights())
-    while True:
-        i = 0
-        while not buffer_q.empty():
-            rl.add_to_buffer(buffer_q.get())
-            i+=1
-        while i > 0:
-            rl.update()
-            i -= 1
-        if rl.step_number % 40 == 0:
+import traceback
+def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue]):
+    try:
+        rl = DeepAC(observation_size=6, action_size=1, train_interval_step=1, target_update_interval_step=10, shared_buffer=shared_buffer)
+        rl.create_model_actor_critic()
+        for model_sender_q in all_model_sender_q:
+            model_sender_q.put(rl.actor.get_weights())
+        last_step = 0
+        step_in_each_update = 32
+        online_update_step_interval = 1
+        all_update_count = 0
+        while True:
+            if shared_buffer.step.value <= shared_buffer.min_size:
+                print('c1')
+                continue
+            if shared_buffer.step.value - last_step < online_update_step_interval:
+                print('c2')
+                continue
+            update_count = int((shared_buffer.step.value - last_step) / online_update_step_interval)
+            if update_count == 0:
+                print('c3')
+                continue
+            last_step = last_step + update_count * online_update_step_interval
+            all_update_count += update_count
+            update_target = False
+            if all_update_count > 200:
+                all_update_count = 0
+                update_target = True
+            print(shared_buffer.step.value, step_in_each_update * update_count, update_target)
+            rl.update(min(320, step_in_each_update * update_count), update_target)
             for model_sender_q in all_model_sender_q:
                 model_sender_q.put(rl.actor.get_weights())
+    except Exception as e:
+        print(traceback.format_exc())
+
 
 start_time = str(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
-trainer_count = 1
-queue = Queue()  # to update buffer
+
+shared_buffer = SharedBuffer()
+trainer_count = 4
 queues = [Queue() for i in range(trainer_count)]  # to get actor
 ps = []
 for i in range(trainer_count):
-    p = Process(target=run_manager, args=(queue, queues[i], i + 1, start_time))
+    p = Process(target=run_manager, args=(shared_buffer, queues[i], i + 1, start_time))
     p.start()
     ps.append(p)
-m = Process(target=run_model, args=(queue, queues))
+m = Process(target=run_model, args=(shared_buffer, queues))
 m.start()
 for p in ps:
     p.join()

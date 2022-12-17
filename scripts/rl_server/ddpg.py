@@ -119,7 +119,7 @@ class OrnsteinUhlenbeckProcess(AnnealedGaussianProcess):
 
 
 class DeepAC:
-    def __init__(self, observation_size, action_size, buffer_size=100000, train_interval_step=1, target_update_interval_step=200):
+    def __init__(self, observation_size, action_size, shared_buffer, train_interval_step=1, target_update_interval_step=200):
         self.observation_size = observation_size
         self.action_size = action_size
         self.model_type = ''
@@ -130,7 +130,7 @@ class DeepAC:
         self.critic_action_input = None
         self.critic_action_input_idx = None
         self.actor_train_fn = None
-        self.buffer = Buffer(buffer_size)
+        self.shared_buffer = shared_buffer
         self.train_interval_step = train_interval_step
         self.target_update_interval_step = target_update_interval_step
         self.action_number = 9
@@ -257,8 +257,8 @@ class DeepAC:
         return best_action
 
     def add_to_buffer(self, transit: Transition):
-        self.buffer.add(transit)
-        # self.step_number += 1
+        self.shared_buffer.add(transit)
+        self.step_number += 1
         if transit.next_state is None:  # End step in episode
             self.episode_number += 1
 
@@ -266,17 +266,20 @@ class DeepAC:
         self.add_to_buffer(transit)
         self.update()
 
-    def update(self):
+    def update(self, step_in_each_update, update_target):
         # if self.step_number % self.train_interval_step == 0:
-        self.update_from_buffer()
-        self.step_number += 1
-        if self.target_model_update > 1 and self.step_number % self.target_update_interval_step == 0:
+        self.update_from_buffer(step_in_each_update)
+        if update_target:
             self.target_critic.set_weights(self.critic.get_weights())
-        if self.target_model_update > 1 and self.step_number % self.target_update_interval_step == 0:
             self.target_actor.set_weights(self.actor.get_weights())
+        # if self.target_model_update > 1 and self.step_number % self.target_update_interval_step == 0:
+        #     self.target_critic.set_weights(self.critic.get_weights())
+        # if self.target_model_update > 1 and self.step_number % self.target_update_interval_step == 0:
+        #     self.target_actor.set_weights(self.actor.get_weights())
 
-    def update_from_buffer(self):
-        transits: List[Transition] = self.buffer.get_rand(320)
+    def update_from_buffer(self, step_in_each_update):
+        transits: List[Transition] = self.shared_buffer.get_rand(step_in_each_update)
+        step_in_each_update = len(transits)
         if len(transits) == 0:
             return
         is_image_param = False
@@ -312,7 +315,7 @@ class DeepAC:
         target_q_values = self.target_critic.predict_on_batch(state1_batch_with_action).flatten()
         discounted_reward_batch = self.gama * target_q_values
         discounted_reward_batch *= terminal1_batch
-        targets = (reward_batch + discounted_reward_batch).reshape(320, 1)
+        targets = (reward_batch + discounted_reward_batch).reshape(step_in_each_update, 1)
 
         state0_batch_with_action = [states_view]
         state0_batch_with_action.insert(self.critic_action_input_idx, action_batch)
