@@ -272,7 +272,8 @@ def run_manager(shared_buffer: SharedBuffer, model_receiver_q: Queue, db, start_
 def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue], start_time):
     try:
         out_path = os.path.join('res', run_name + '_' + start_time, str(0))
-        out_file = open(os.path.join(out_path, 'log'))
+        os.makedirs(out_path, exist_ok=True)
+        out_file = open(os.path.join(out_path, 'log'), 'w')
         rl = DeepAC(observation_size=6, action_size=1, train_interval_step=1, target_update_interval_step=10, shared_buffer=shared_buffer)
         rl.create_model_actor_critic()
         for model_sender_q in all_model_sender_q:
@@ -295,12 +296,13 @@ def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue], star
                 continue
             update_target = False
 
-            if step - last_target_update_step > target_update_step_interval:
+            if step - last_target_update_step >= target_update_step_interval:
                 update_target = True
                 last_target_update_step = step
             last_online_update_step += update_count * online_update_step_interval
             data_in_update = min(320, step_in_each_update * update_count)
             log = f'#{step} {last_online_update_step} {data_in_update} {last_target_update_step} {update_target}\n'
+            print(log)
             out_file.write(log)
             rl.update(data_in_update, update_target)
             for model_sender_q in all_model_sender_q:
