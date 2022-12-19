@@ -52,7 +52,7 @@ RLTrainer::RLTrainer()
         : TrainerAgent()
 {
     M_counter = 0;
-    M_max_episode_length = 100;
+    M_max_episode_length = 200;
 }
 
 /*-------------------------------------------------------------------*/
@@ -215,18 +215,19 @@ RLTrainer::doRL()
 pair<vector<double>, bool>
 RLTrainer::calcRewards()
 {
-    double goal_reward = 10.0;
+    double goal_reward = 2.0;
     double move_reward = -0.01;
-    double move_out_reward = -10.0;
+    double move_out_reward = -2.0;
     vector<double> res;
 
     rcsc::Vector2D ball_pos = world().ball().pos();
     const CoachPlayerObject * player = world().teammate(1);
     rcsc::Vector2D player_pos = player->pos();
-    Vector2D target_pos = world().ball().pos();
+    Vector2D target_pos = Vector2D(0,0);//world().ball().pos();
     double diff_dist = 0.0;
     if (M_last_pos.isValid())
         diff_dist = M_last_pos.dist(target_pos) - player_pos.dist(target_pos);
+    double diff_dist_reward = diff_dist / 100.0;
     M_last_pos = player_pos;
 
     double target_r = 10.0;
@@ -253,11 +254,11 @@ RLTrainer::calcRewards()
     if (counter() > max_episode_length())
     {
         res.push_back(4);  //end time
-        res.push_back(move_reward + diff_dist / 10.0);
+        res.push_back(move_reward + diff_dist_reward);
         return make_pair(res, true);
     }
     res.push_back(M_counter == -1 ? 0 : 1);  // normal or start
-    res.push_back(move_reward + diff_dist / 10.0);
+    res.push_back(move_reward + diff_dist_reward);
     return make_pair(res, false);
 }
 

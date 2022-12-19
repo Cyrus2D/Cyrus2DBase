@@ -7,17 +7,20 @@ import datetime
 from multiprocessing import Process, Pipe, Queue, connection
 from multiprocessing.connection import Connection
 from transit import Transition
+from multiprocessing import Manager
+import random
+import traceback
 
 
-patch_number_max = 1000
+patch_number_max = 400
 train_episode_number_max = 100
 test_episode_number_max = 10
-done = False
-
+done = Manager().Value('i', 0)
+run_name = 'one'
 
 def handler(signum, frame):
     global done
-    done = True
+    done.value = 1
 
 
 signal.signal(signal.SIGINT, handler)
@@ -32,8 +35,6 @@ class StepData:
         self.done = False
 
 
-from multiprocessing import Manager
-import random
 class SharedBuffer:
     def __init__(self):
         self.min_size = 100
@@ -83,7 +84,7 @@ class PythonRLTrainer:
         self.latest_episode_rewards = []
         self.data: dict[int, StepData] = {}
         self.cycle = -1
-        self.out_path = os.path.join('res', 'name_' + start_time, str(db_number))
+        self.out_path = os.path.join('res', run_name + '_' + start_time, str(db_number))
         os.makedirs(self.out_path, exist_ok=True)
         self.init_trainer()
 
@@ -158,7 +159,10 @@ class PythonRLTrainer:
         self.rl.save_weight(self.out_path)
 
     def wait_for_trainer(self):
-        key, msg = self.rd.get_msg_from(num=0, cycle=None)
+        global done
+        key, msg = self.rd.get_msg_from(num=0, cycle=None, done=done)
+        if done.value == 1:
+            return
         self.cycle = msg + 1
         if not isinstance(msg, int):
             raise Exception('the start message from trainer should be int.')
@@ -200,11 +204,11 @@ class PythonRLTrainer:
 
         while True:
             self.get_and_update_actor()
-            if done or patch_number % 50 == 0:
+            if done.value == 1 or patch_number % 50 == 0:
                 self.end_function()
-            if done:
-                return
-            pre_num_cycle, values = self.rd.get_msg_from(num=0, msg_length=[2], cycle=self.cycle, wait_time_second=1)
+            if done.value == 1:
+                break
+            pre_num_cycle, values = self.rd.get_msg_from(num=0, msg_length=[2], cycle=self.cycle, wait_time_second=1, done=done)
             if pre_num_cycle is None:
                 self.rd.set_msg(RedisServer.FROM_AGENT_PRE_POSE + '_' + str(0) + '_' + str(self.cycle), 'OK')
             if pre_num_cycle is not None:
@@ -235,9 +239,9 @@ class PythonRLTrainer:
                             patch_number += 1
                     if patch_number == patch_number_max:
                         self.end_function()
-                        return
+                        break
 
-            pre_num_cycle, msg = self.rd.get_msg_from(num=1, msg_length=[6], cycle=self.cycle, wait_time_second=0.5)
+            pre_num_cycle, msg = self.rd.get_msg_from(num=1, msg_length=[6], cycle=self.cycle, wait_time_second=0.5, done=done)
             if pre_num_cycle is not None:
                 if isinstance(msg, str):  # FAKE message
                     self.rd.set_msg(pre_num_cycle, "OK")
@@ -257,44 +261,51 @@ class PythonRLTrainer:
             if is_train:
                 self.add_data_to_buffer(self.cycle)
             self.cycle += 1
+        print('done manager')
 
 
 def run_manager(shared_buffer: SharedBuffer, model_receiver_q: Queue, db, start_time):
     python_rl_trainer = PythonRLTrainer(shared_buffer, model_receiver_q, db, start_time)
     python_rl_trainer.run()
 
-import traceback
-def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue]):
+
+def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue], start_time):
     try:
+        out_path = os.path.join('res', run_name + '_' + start_time, str(0))
+        out_file = open(os.path.join(out_path, 'log'))
         rl = DeepAC(observation_size=6, action_size=1, train_interval_step=1, target_update_interval_step=10, shared_buffer=shared_buffer)
         rl.create_model_actor_critic()
         for model_sender_q in all_model_sender_q:
             model_sender_q.put(rl.actor.get_weights())
-        last_step = 0
+        last_online_update_step = 0
+        last_target_update_step = 0
         step_in_each_update = 32
         online_update_step_interval = 1
-        all_update_count = 0
+        target_update_step_interval = 200
         while True:
-            if shared_buffer.step.value <= shared_buffer.min_size:
-                print('c1')
+            if done.value == 1:
+                break
+            step = shared_buffer.step.value
+            if step <= shared_buffer.min_size:
                 continue
-            if shared_buffer.step.value - last_step < online_update_step_interval:
-                print('c2')
+            if step - last_online_update_step < online_update_step_interval:
                 continue
-            update_count = int((shared_buffer.step.value - last_step) / online_update_step_interval)
+            update_count = int((step - last_online_update_step) / online_update_step_interval)
             if update_count == 0:
-                print('c3')
                 continue
-            last_step = last_step + update_count * online_update_step_interval
-            all_update_count += update_count
             update_target = False
-            if all_update_count > 200:
-                all_update_count = 0
+
+            if step - last_target_update_step > target_update_step_interval:
                 update_target = True
-            print(shared_buffer.step.value, step_in_each_update * update_count, update_target)
-            rl.update(min(320, step_in_each_update * update_count), update_target)
+                last_target_update_step = step
+            last_online_update_step += update_count * online_update_step_interval
+            data_in_update = min(320, step_in_each_update * update_count)
+            log = f'#{step} {last_online_update_step} {data_in_update} {last_target_update_step} {update_target}\n'
+            out_file.write(log)
+            rl.update(data_in_update, update_target)
             for model_sender_q in all_model_sender_q:
                 model_sender_q.put(rl.actor.get_weights())
+        print('done main model')
     except Exception as e:
         print(traceback.format_exc())
 
@@ -302,14 +313,14 @@ def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue]):
 start_time = str(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
 
 shared_buffer = SharedBuffer()
-trainer_count = 4
+trainer_count = 1
 queues = [Queue() for i in range(trainer_count)]  # to get actor
 ps = []
 for i in range(trainer_count):
     p = Process(target=run_manager, args=(shared_buffer, queues[i], i + 1, start_time))
     p.start()
     ps.append(p)
-m = Process(target=run_model, args=(shared_buffer, queues))
+m = Process(target=run_model, args=(shared_buffer, queues, start_time))
 m.start()
 for p in ps:
     p.join()

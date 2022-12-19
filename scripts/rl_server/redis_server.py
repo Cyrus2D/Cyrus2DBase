@@ -10,10 +10,12 @@ class RedisServer:
         self.client = redis.Redis(db=db_number)
         self.read_keys = []
 
-    def get_msg_from(self, num, msg_length=None, cycle=None, wait_time_second=None):
+    def get_msg_from(self, num, msg_length=None, cycle=None, wait_time_second=None, done=None):
         start_with = RedisServer.FROM_AGENT_PRE_POSE + '_' + str(num) + (('_' + str(cycle)) if cycle is not None else '')
         start_time = time.time()
         while True:
+            if done is not None and done.value == 1:
+                break
             if wait_time_second:
                 waited_time = time.time() - start_time
                 if waited_time > wait_time_second:
