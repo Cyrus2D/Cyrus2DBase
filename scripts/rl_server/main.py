@@ -280,9 +280,11 @@ def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue], star
             model_sender_q.put(rl.actor.get_weights())
         last_online_update_step = 0
         last_target_update_step = 0
+        last_send_model_step = 0
         step_in_each_update = 32
         online_update_step_interval = 1
         target_update_step_interval = 200
+        send_model_step_interval = 200
         while True:
             if done.value == 1:
                 break
@@ -299,14 +301,19 @@ def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue], star
             if step - last_target_update_step >= target_update_step_interval:
                 update_target = True
                 last_target_update_step = step
+            send_model = False
+            if step - last_send_model_step >= send_model_step_interval:
+                send_model = True
+                last_send_model_step = step
             last_online_update_step += update_count * online_update_step_interval
             data_in_update = min(320, step_in_each_update * update_count)
             log = f'#{step} {last_online_update_step} {data_in_update} {last_target_update_step} {update_target}\n'
             print(log)
             out_file.write(log)
             rl.update(data_in_update, update_target)
-            for model_sender_q in all_model_sender_q:
-                model_sender_q.put(rl.actor.get_weights())
+            if send_model:
+                for model_sender_q in all_model_sender_q:
+                    model_sender_q.put(rl.actor.get_weights())
         print('done main model')
     except Exception as e:
         print(traceback.format_exc())
