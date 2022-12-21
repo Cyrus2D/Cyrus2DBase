@@ -70,13 +70,23 @@ class SharedBuffer:
 
 
 class PythonRLTrainer:
-    def __init__(self, shared_buffer: SharedBuffer, model_receiver_q: Queue, db_number, start_time):
+    def __init__(self,
+                 shared_buffer: SharedBuffer,
+                 model_receiver_q: Queue,
+                 db_number: int,
+                 start_time: str,
+                 train_embedded: bool,
+                 send_transition: bool,
+                 get_model: bool):
         self.shared_buffer: SharedBuffer = shared_buffer
         self.model_receiver_q: Queue = model_receiver_q
+        self.train_embedded = train_embedded
+        self.send_transition = send_transition
+        self.get_model = get_model
         self.player_count = 1
         self.observation_size = 6
         self.action_size = 1
-        self.rl = DeepAC(observation_size=self.observation_size, action_size=self.action_size, shared_buffer=None)
+        self.rl = DeepAC(observation_size=self.observation_size, action_size=self.action_size, shared_buffer=self.shared_buffer)
         self.rl.create_model_actor_critic()
         self.rd = RedisServer(db_number)
         self.rd.client.flushdb()
@@ -206,7 +216,8 @@ class PythonRLTrainer:
         is_train = True
 
         while True:
-            self.get_and_update_actor()
+            if self.get_model:
+                self.get_and_update_actor()
             if done.value == 1 or patch_number % 50 == 0:
                 self.end_function()
             if done.value == 1:
@@ -263,12 +274,14 @@ class PythonRLTrainer:
                 self.response_old_message()
             if is_train:
                 self.add_data_to_buffer(self.cycle)
+                if self.train_embedded:
+                    self.rl.update(32, self.rl.update_called_number % 200 == 0)
             self.cycle += 1
         print('done manager')
 
 
-def run_manager(shared_buffer: SharedBuffer, model_receiver_q: Queue, db, start_time):
-    python_rl_trainer = PythonRLTrainer(shared_buffer, model_receiver_q, db, start_time)
+def run_manager(shared_buffer: SharedBuffer, model_receiver_q: Queue, db, start_time, train_embedded, send_transition, get_model):
+    python_rl_trainer = PythonRLTrainer(shared_buffer, model_receiver_q, db, start_time, train_embedded, send_transition, get_model)
     python_rl_trainer.run()
 
 
@@ -311,7 +324,6 @@ def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue], star
             last_online_update_step += update_count * online_update_step_interval
             data_in_update = min(320, step_in_each_update * update_count)
             log = f'#{step} {last_online_update_step} {data_in_update} {last_target_update_step} {update_target}\n'
-            print(log)
             out_file.write(log)
             rl.update(data_in_update, update_target)
             if send_model:
@@ -329,7 +341,7 @@ trainer_count = 1
 queues = [Queue() for i in range(trainer_count)]  # to get actor
 ps = []
 for i in range(trainer_count):
-    p = Process(target=run_manager, args=(shared_buffer, queues[i], i + 1, start_time))
+    p = Process(target=run_manager, args=(shared_buffer, queues[i], i + 1, start_time, True, True, False))
     p.start()
     ps.append(p)
 m = Process(target=run_model, args=(shared_buffer, queues, start_time))
