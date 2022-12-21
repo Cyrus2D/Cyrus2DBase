@@ -1,5 +1,5 @@
 import os.path
-
+import os
 from keras import models, layers, activations, optimizers, losses, metrics, regularizers
 from keras.engine.sequential import Sequential
 import random
@@ -15,6 +15,8 @@ import tensorflow as tf
 # from main import patch_number_max
 from tensorflow.python.framework.ops import disable_eager_execution
 
+#os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+# tf.config.experimental.set_visible_devices([], 'GPU')
 disable_eager_execution()
 
 def huber_loss(y_true, y_pred, clip_value):

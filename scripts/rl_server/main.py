@@ -10,7 +10,8 @@ from transit import Transition
 from multiprocessing import Manager
 import random
 import traceback
-
+#os.environ["CUDA_VISIBLE_DEVICES"]="1"
+#tf.config.experimental.set_visible_devices([], 'GPU')
 
 patch_number_max = 400
 train_episode_number_max = 100
