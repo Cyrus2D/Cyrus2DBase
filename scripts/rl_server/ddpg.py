@@ -267,11 +267,11 @@ class DeepAC:
         self.add_to_buffer(transit)
         self.update()
 
-    def update(self, step_in_each_update, update_target):
-        # if self.step_number % self.train_interval_step == 0:
+    def update(self, step_in_each_update):
         self.update_called_number += 1
-        self.update_from_buffer(step_in_each_update)
-        if update_target:
+        if self.update_called_number % self.train_interval_step == 0:
+            self.update_from_buffer(step_in_each_update)
+        if self.update_called_number % self.target_update_interval_step == 0:
             self.target_critic.set_weights(self.critic.get_weights())
             self.target_actor.set_weights(self.actor.get_weights())
         # if self.target_model_update > 1 and self.step_number % self.target_update_interval_step == 0:

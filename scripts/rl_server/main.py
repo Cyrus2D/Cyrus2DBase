@@ -76,12 +76,10 @@ class PythonRLTrainer:
                  db_number: int,
                  start_time: str,
                  train_embedded: bool,
-                 send_transition: bool,
                  get_model: bool):
         self.shared_buffer: SharedBuffer = shared_buffer
         self.model_receiver_q: Queue = model_receiver_q
         self.train_embedded = train_embedded
-        self.send_transition = send_transition
         self.get_model = get_model
         self.player_count = 1
         self.observation_size = 6
@@ -275,13 +273,13 @@ class PythonRLTrainer:
             if is_train:
                 self.add_data_to_buffer(self.cycle)
                 if self.train_embedded:
-                    self.rl.update(32, self.rl.update_called_number % 200 == 0)
+                    self.rl.update(32)
             self.cycle += 1
         print('done manager')
 
 
-def run_manager(shared_buffer: SharedBuffer, model_receiver_q: Queue, db, start_time, train_embedded, send_transition, get_model):
-    python_rl_trainer = PythonRLTrainer(shared_buffer, model_receiver_q, db, start_time, train_embedded, send_transition, get_model)
+def run_manager(shared_buffer: SharedBuffer, model_receiver_q: Queue, db, start_time, train_embedded, get_model):
+    python_rl_trainer = PythonRLTrainer(shared_buffer, model_receiver_q, db, start_time, train_embedded, get_model)
     python_rl_trainer.run()
 
 
@@ -290,16 +288,14 @@ def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue], star
         out_path = os.path.join('res', run_name + '_' + start_time, str(0))
         os.makedirs(out_path, exist_ok=True)
         out_file = open(os.path.join(out_path, 'log'), 'w')
-        rl = DeepAC(observation_size=6, action_size=1, train_interval_step=1, target_update_interval_step=10, shared_buffer=shared_buffer)
+        rl = DeepAC(observation_size=6, action_size=1, train_interval_step=1, target_update_interval_step=200, shared_buffer=shared_buffer)
         rl.create_model_actor_critic()
         for model_sender_q in all_model_sender_q:
             model_sender_q.put(rl.actor.get_weights())
         last_online_update_step = 0
-        last_target_update_step = 0
         last_send_model_step = 0
         step_in_each_update = 32
         online_update_step_interval = 1
-        target_update_step_interval = 200
         send_model_step_interval = 200
         while True:
             if done.value == 1:
@@ -312,23 +308,20 @@ def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue], star
             update_count = int((step - last_online_update_step) / online_update_step_interval)
             if update_count == 0:
                 continue
-            update_target = False
-
-            if step - last_target_update_step >= target_update_step_interval:
-                update_target = True
-                last_target_update_step = step
             send_model = False
             if step - last_send_model_step >= send_model_step_interval:
                 send_model = True
                 last_send_model_step = step
             last_online_update_step += update_count * online_update_step_interval
             data_in_update = min(320, step_in_each_update * update_count)
-            log = f'#{step} {last_online_update_step} {data_in_update} {last_target_update_step} {update_target}\n'
-            out_file.write(log)
-            rl.update(data_in_update, update_target)
+            out_file.write(f'#{step} update {last_online_update_step} {data_in_update}\n')
+            rl.update(data_in_update)
             if send_model:
+                out_file.write(f'#{step} sent model\n')
                 for model_sender_q in all_model_sender_q:
                     model_sender_q.put(rl.actor.get_weights())
+            if 1000 < step < 2000:
+                out_file.flush()
         print('done main model')
     except Exception as e:
         print(traceback.format_exc())
@@ -338,16 +331,21 @@ start_time = str(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
 
 shared_buffer = SharedBuffer()
 trainer_count = 1
+train_embedded = False
+get_model = True
 queues = [Queue() for i in range(trainer_count)]  # to get actor
 ps = []
 for i in range(trainer_count):
-    p = Process(target=run_manager, args=(shared_buffer, queues[i], i + 1, start_time, True, True, False))
+    p = Process(target=run_manager, args=(shared_buffer, queues[i], i + 1, start_time, train_embedded, get_model))
     p.start()
     ps.append(p)
-m = Process(target=run_model, args=(shared_buffer, queues, start_time))
-m.start()
+if not train_embedded:
+    m = Process(target=run_model, args=(shared_buffer, queues, start_time))
+    m.start()
 for p in ps:
     p.join()
     print('end')
-m.join()
+done.value = True
+if not train_embedded:
+    m.join()
 
