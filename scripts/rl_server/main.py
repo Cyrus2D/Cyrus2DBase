@@ -37,8 +37,8 @@ class StepData:
 
 class SharedBuffer:
     def __init__(self):
-        self.min_size = 100
-        self.size = 1000
+        self.min_size = 1000
+        self.size = 100000
         self.list: list[Union[StepData, None]] = Manager().list([None for _ in range(self.size)])
         self.index = Manager().Value('i', 0)
         self.max_index = Manager().Value('i', 0)
@@ -57,13 +57,16 @@ class SharedBuffer:
 
     def get_rand(self, request_number):
         res = []
-        if request_number <= self.min_size:
+        if self.max_index.value < self.min_size:
             return res
         number = min(request_number, self.max_index.value)
         ran = [random.randint(0, self.max_index.value) for _ in range(number)]
         for r in ran:
             res.append(self.list[r])
         return res
+
+    def __str__(self):
+        return f'SharedBuffer {self.index} {self.max_index} {self.step}'
 
 
 class PythonRLTrainer:
