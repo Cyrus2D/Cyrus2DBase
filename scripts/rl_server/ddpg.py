@@ -144,6 +144,7 @@ class DeepAC:
         self.target_model_update = 2.7#2.005
         self.random_process = OrnsteinUhlenbeckProcess(size=1, theta=.15, mu=0., sigma=.1)
         self.critic_history = []
+        self.update_called_number = 0
         pass
 
     def create_model_actor_critic(self):
@@ -268,6 +269,7 @@ class DeepAC:
 
     def update(self, step_in_each_update, update_target):
         # if self.step_number % self.train_interval_step == 0:
+        self.update_called_number += 1
         self.update_from_buffer(step_in_each_update)
         if update_target:
             self.target_critic.set_weights(self.critic.get_weights())
