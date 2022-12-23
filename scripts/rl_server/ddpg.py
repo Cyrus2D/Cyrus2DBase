@@ -16,7 +16,7 @@ import tensorflow as tf
 from tensorflow.python.framework.ops import disable_eager_execution
 
 #os.environ["CUDA_VISIBLE_DEVICES"]="-1"
-# tf.config.experimental.set_visible_devices([], 'GPU')
+tf.config.experimental.set_visible_devices([], 'GPU')
 disable_eager_execution()
 
 def huber_loss(y_true, y_pred, clip_value):
@@ -144,7 +144,7 @@ class DeepAC:
         self.use_double = False
         self.loss_values = []
         self.target_model_update = 2.7#2.005
-        self.random_process = OrnsteinUhlenbeckProcess(size=1, theta=.15, mu=0., sigma=.1)
+        self.random_process = OrnsteinUhlenbeckProcess(size=self.action_size, theta=.15, mu=0., sigma=.1)
         self.critic_history = []
         self.update_called_number = 0
         pass
@@ -242,7 +242,7 @@ class DeepAC:
         assert action.shape == (self.action_size,)
         return action
 
-    def get_random_action(self, state, patch_number, patch_number_max, p_rnd=None):
+    def get_random_action(self, state, patch_number, patch_number_max, p_rnd=None, generate_random=True):
         if p_rnd is None:
             max_number = patch_number_max
             number = patch_number
@@ -253,10 +253,13 @@ class DeepAC:
                 p_rnd = 1.0 + number / max_number * -0.9
         best_action = self.get_best_action(state)
         if random.random() < p_rnd:
-            # noise = self.random_process.sample()
-            # assert noise.shape == best_action.shape
-            # best_action += noise
-            best_action = np.array([random.random() * 2.0 - 1.0 for i in range(self.action_size)])
+            if generate_random:
+                best_action = np.array([random.random() * 2.0 - 1.0 for i in range(self.action_size)])
+            else:
+                noise = self.random_process.sample()
+                assert noise.shape == best_action.shape
+                best_action += noise
+
         return best_action
 
     def add_to_buffer(self, transit: Transition):

@@ -17,7 +17,11 @@ patch_number_max = 400
 train_episode_number_max = 100
 test_episode_number_max = 10
 done = Manager().Value('i', 0)
-run_name = 'one'
+run_name = '1'
+trainer_count = 1
+db_start = 1
+train_embedded = True
+get_model = False
 
 def handler(signum, frame):
     global done
@@ -231,7 +235,7 @@ class PythonRLTrainer:
                     self.latest_episode_rewards.append(reward)
                 self.rd.set_msg(pre_num_cycle, 'OK')
                 if is_start:  # start
-                    pass
+                    self.rl.random_process.reset_states()
                 elif is_done:  # end
                     if is_train:
                         self.training_episode_res.append(status)
@@ -261,7 +265,7 @@ class PythonRLTrainer:
                 else:
                     if is_train:
                         self.add_player_info(pre_num_cycle, msg)
-                    action_arr = self.rl.get_random_action(msg, patch_number, patch_number_max, None if is_train else 0.0)
+                    action_arr = self.rl.get_random_action(msg, patch_number, patch_number_max, None if is_train else 0.0, True)
                     action_tmp = action_arr.tolist()
                     action = []
                     for a in action_tmp:
@@ -331,13 +335,10 @@ def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue], star
 start_time = str(datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
 
 shared_buffer = SharedBuffer()
-trainer_count = 1
-train_embedded = False
-get_model = True
 queues = [Queue() for i in range(trainer_count)]  # to get actor
 ps = []
 for i in range(trainer_count):
-    p = Process(target=run_manager, args=(shared_buffer, queues[i], i + 1, start_time, train_embedded, get_model))
+    p = Process(target=run_manager, args=(shared_buffer, queues[i], i + db_start, start_time, train_embedded, get_model))
     p.start()
     ps.append(p)
 if not train_embedded:
