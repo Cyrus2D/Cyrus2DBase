@@ -160,10 +160,10 @@ class DeepAC:
         self.actor = actor
 
         input_obs = layers.Input((self.observation_size,), name='observation_input')
-        flattened_observation = layers.Flatten()(input_obs)
+        # flattened_observation = layers.Flatten()(input_obs)
         action_input = layers.Input(shape=(self.action_size,), name='action_input')
-        critic = layers.Dense(20, activation='relu')(flattened_observation)
-        critic = layers.Concatenate()([critic, action_input])
+        # critic = layers.Dense(20, activation='relu')(flattened_observation)
+        critic = layers.Concatenate()([input_obs, action_input])
         critic = layers.Dense(20, activation='relu')(critic)
         critic = layers.Dense(10, activation='relu')(critic)
         critic = layers.Dense(1)(critic)
