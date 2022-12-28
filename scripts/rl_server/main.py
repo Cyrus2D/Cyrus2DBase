@@ -15,7 +15,7 @@ import traceback
 
 patch_number_max = 400
 train_episode_number_max = 100
-test_episode_number_max = 10
+test_episode_number_max = 20
 done = Manager().Value('i', 0)
 run_name = '1'
 trainer_count = 1
