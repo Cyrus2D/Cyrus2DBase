@@ -10,6 +10,7 @@ from transit import Transition
 from multiprocessing import Manager
 import random
 import traceback
+import sys
 #os.environ["CUDA_VISIBLE_DEVICES"]="1"
 #tf.config.experimental.set_visible_devices([], 'GPU')
 
@@ -22,6 +23,47 @@ trainer_count = 1
 db_start = 1
 train_embedded = True
 get_model = False
+train_random_action = True
+test_random_action = True
+decreased_random = True
+best_action_percent = 0.9
+generate_random = True
+
+
+def to_bool(val: str):
+    if val.lower() in ['t', '1', 'true', 'y', 'yes']:
+        return True
+    return False
+
+
+args = sys.argv
+if len(args) > 1:
+    i = 1
+    while i < len(args):
+        arg = args[i]
+        val = args[i + 1]
+        if arg == 'run_name':
+            run_name = val
+        if arg == 'trainer_count':
+            trainer_count = int(val)
+        if arg == 'db_start':
+            db_start = int(val)
+        if arg == 'train_embedded':
+            train_embedded = to_bool(val)
+        if arg == 'get_model':
+            get_model = to_bool(val)
+        if arg == 'train_random_action':
+            train_random_action = to_bool(val)
+        if arg == 'test_random_action':
+            test_random_action = to_bool(val)
+        if arg == 'decreased_random':
+            decreased_random = to_bool(val)
+        if arg == 'best_action_percent':
+            best_action_percent = float(val)
+        if arg == 'generate_random':
+            generate_random = to_bool(val)
+        i += 2
+
 
 def handler(signum, frame):
     global done
@@ -265,7 +307,16 @@ class PythonRLTrainer:
                 else:
                     if is_train:
                         self.add_player_info(pre_num_cycle, msg)
-                    action_arr = self.rl.get_random_action(msg, patch_number, patch_number_max, None if is_train else 0.0, True)
+                    random_percentage = 0.0
+                    if is_train and train_random_action:
+                        if decreased_random:
+                            random_percentage = None
+                        else:
+                            random_percentage = 1 - best_action_percent
+                    if not is_train and test_random_action:
+                        random_percentage = 1 - best_action_percent
+
+                    action_arr = self.rl.get_random_action(msg, patch_number, patch_number_max, random_percentage, generate_random)
                     action_tmp = action_arr.tolist()
                     action = []
                     for a in action_tmp:
