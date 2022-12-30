@@ -215,9 +215,9 @@ RLTrainer::doRL()
 pair<vector<double>, bool>
 RLTrainer::calcRewards()
 {
-    double goal_reward = 2.0;
+    double goal_reward = 5.0;
     double move_reward = -0.01;
-    double move_out_reward = -2.0;
+    double move_out_reward = -5.0;
     vector<double> res;
 
     rcsc::Vector2D ball_pos = world().ball().pos();
