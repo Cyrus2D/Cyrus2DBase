@@ -223,14 +223,14 @@ RLTrainer::calcRewards()
     rcsc::Vector2D ball_pos = world().ball().pos();
     const CoachPlayerObject * player = world().teammate(1);
     rcsc::Vector2D player_pos = player->pos();
-    Vector2D target_pos = Vector2D(0,0);//world().ball().pos();
+    Vector2D target_pos = world().ball().pos();
     double diff_dist = 0.0;
     if (M_last_pos.isValid())
         diff_dist = M_last_pos.dist(target_pos) - player_pos.dist(target_pos);
     double diff_dist_reward = diff_dist / 100.0;
     M_last_pos = player_pos;
 
-    double target_r = 10.0;
+    double target_r = 5.0;
 //    0 start
 //    1 normal
 //    2 end goal
