@@ -17,6 +17,7 @@ import sys
 patch_number_max = 400
 train_episode_number_max = 100
 test_episode_number_max = 20
+obs_size = 12
 done = Manager().Value('i', 0)
 run_name = '1'
 trainer_count = 1
@@ -129,7 +130,7 @@ class PythonRLTrainer:
         self.train_embedded = train_embedded
         self.get_model = get_model
         self.player_count = 1
-        self.observation_size = 6
+        self.observation_size = obs_size
         self.action_size = 1
         self.rl = DeepAC(observation_size=self.observation_size, action_size=self.action_size, shared_buffer=self.shared_buffer)
         self.rl.create_model_actor_critic()
@@ -300,7 +301,7 @@ class PythonRLTrainer:
                         self.end_function()
                         break
 
-            pre_num_cycle, msg = self.rd.get_msg_from(num=1, msg_length=[6], cycle=self.cycle, wait_time_second=0.5, done=done)
+            pre_num_cycle, msg = self.rd.get_msg_from(num=1, msg_length=[obs_size], cycle=self.cycle, wait_time_second=0.5, done=done)
             if pre_num_cycle is not None:
                 if isinstance(msg, str):  # FAKE message
                     self.rd.set_msg(pre_num_cycle, "OK")
@@ -344,7 +345,7 @@ def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue], star
         out_path = os.path.join('res', run_name + '_' + start_time, str(0))
         os.makedirs(out_path, exist_ok=True)
         out_file = open(os.path.join(out_path, 'log'), 'w')
-        rl = DeepAC(observation_size=6, action_size=1, train_interval_step=1, target_update_interval_step=200, shared_buffer=shared_buffer)
+        rl = DeepAC(observation_size=obs_size, action_size=1, train_interval_step=1, target_update_interval_step=200, shared_buffer=shared_buffer)
         rl.create_model_actor_critic()
         for model_sender_q in all_model_sender_q:
             model_sender_q.put(rl.actor.get_weights())
