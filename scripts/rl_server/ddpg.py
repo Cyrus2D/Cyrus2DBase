@@ -149,12 +149,16 @@ class DeepAC:
         self.update_called_number = 0
         pass
 
-    def create_model_actor_critic(self):
+    def create_model_actor_critic(self, actor_layers=None, critic_layers=None, actor_optimizer='adam', critic_optimizer='adam'):
+        if critic_layers is None:
+            critic_layers = [128, 64, 32]
+        if actor_layers is None:
+            actor_layers = [128, 64, 32]
         self.model_type = 'param'
         input_obs = layers.Input((self.observation_size,))
-        actor = layers.Dense(128, activation='relu')(input_obs)
-        actor = layers.Dense(64, activation='relu')(actor)
-        actor = layers.Dense(32, activation='relu')(actor)
+        actor = layers.Dense(actor_layers[0], activation='relu')(input_obs)
+        for layer in actor_layers[1:]:
+            actor = layers.Dense(layer, activation='relu')(actor)
         actor = layers.Dense(self.action_size, activation='sigmoid')(actor)
         actor = keras.Model(input_obs, actor)
         actor.summary()
@@ -165,9 +169,9 @@ class DeepAC:
         action_input = layers.Input(shape=(self.action_size,), name='action_input')
         # critic = layers.Dense(20, activation='relu')(flattened_observation)
         critic = layers.Concatenate()([input_obs, action_input])
-        critic = layers.Dense(128, activation='relu')(critic)
-        critic = layers.Dense(64, activation='relu')(critic)
-        critic = layers.Dense(32, activation='relu')(critic)
+        critic = layers.Dense(critic_layers[0], activation='relu')(critic)
+        for layer in critic_layers[1:]:
+            critic = layers.Dense(layer, activation='relu')(critic)
         critic = layers.Dense(1)(critic)
         critic = Model(inputs=[action_input, input_obs], outputs=critic)
         critic.summary()
@@ -183,10 +187,20 @@ class DeepAC:
         # self.actor.compile(optimizer='sgd', loss='mse')
 
         # actor_optimizer = optimizers.RMSprop(lr=1e-4)
-        actor_optimizer = optimizers.SGD(lr=0.001)
+        if actor_optimizer == 'sgd':
+            actor_optimizer = optimizers.SGD(lr=0.001)
+        elif actor_optimizer == 'adam':
+            actor_optimizer = optimizers.Adam(lr=1e-4)
+        else:
+            raise Exception('The actor optimizer is not defined.')
         # self.actor.compile(optimizer=actor_optimizer, loss='mse')
         # critic_optimizer = optimizers.RMSprop(lr=1e-4)
-        critic_optimizer = optimizers.SGD(lr=0.001)
+        if critic_optimizer == 'sgd':
+            critic_optimizer = optimizers.SGD(lr=0.001)
+        elif critic_optimizer == 'adam':
+            critic_optimizer = optimizers.Adam(lr=1e-3)
+        else:
+            raise Exception('The critic optimizer is not defined.')
         if self.target_model_update < 1.:
             critic_updates = get_soft_target_model_updates(self.target_critic, self.critic, self.target_model_update)
             critic_optimizer = AdditionalUpdatesOptimizer(critic_optimizer, critic_updates)

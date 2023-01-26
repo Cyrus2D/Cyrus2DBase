@@ -29,12 +29,23 @@ test_random_action = True
 decreased_random = True
 best_action_percent = 0.9
 generate_random = True
+actor_layers = None
+critic_layers = None
+actor_optimizer = 'sgd'
+critic_optimizer = 'sgd'
 
 
 def to_bool(val: str):
     if val.lower() in ['t', '1', 'true', 'y', 'yes']:
         return True
     return False
+
+
+def to_list(val: str):
+    res = []
+    for layer in val.strip().split(','):
+        res.append(float(layer))
+    return res
 
 
 args = sys.argv
@@ -63,6 +74,14 @@ if len(args) > 1:
             best_action_percent = float(val)
         if arg == 'generate_random':
             generate_random = to_bool(val)
+        if arg == 'actor_layers':
+            actor_layers = to_list(val)
+        if arg == 'critic_layers':
+            critic_layers = to_list(val)
+        if arg == 'actor_optimizer':
+            actor_optimizer = val
+        if arg == 'critic_optimizer':
+            critic_optimizer = val
         i += 2
 
 
@@ -133,7 +152,7 @@ class PythonRLTrainer:
         self.observation_size = obs_size
         self.action_size = 1
         self.rl = DeepAC(observation_size=self.observation_size, action_size=self.action_size, shared_buffer=self.shared_buffer)
-        self.rl.create_model_actor_critic()
+        self.rl.create_model_actor_critic(actor_layers=actor_layers, critic_layers=critic_layers, actor_optimizer=actor_optimizer, critic_optimizer=critic_optimizer)
         self.rd = RedisServer(db_number)
         self.rd.client.flushdb()
         self.training_episode_com_rewards = []
@@ -346,7 +365,7 @@ def run_model(shared_buffer: SharedBuffer, all_model_sender_q: list[Queue], star
         os.makedirs(out_path, exist_ok=True)
         out_file = open(os.path.join(out_path, 'log'), 'w')
         rl = DeepAC(observation_size=obs_size, action_size=1, train_interval_step=1, target_update_interval_step=200, shared_buffer=shared_buffer)
-        rl.create_model_actor_critic()
+        rl.create_model_actor_critic(actor_layers=actor_layers, critic_layers=critic_layers, actor_optimizer=actor_optimizer, critic_optimizer=critic_optimizer)
         for model_sender_q in all_model_sender_q:
             model_sender_q.put(rl.actor.get_weights())
         last_online_update_step = 0
