@@ -244,6 +244,22 @@ class DeepAC:
         assert action.shape == (self.action_size,)
         return action
 
+    def get_q(self, state, action):
+        # state = np.array(state).tolist()
+        # action = np.array(action).tolist()
+        # inp = [np.array(action), np.array(state)]
+        # print(self.critic_action_input_idx)
+        # inp = np.array(inp)
+        # inp = np.stack([np.array(action), np.array(state)], axis=1)
+        # state0_batch_with_action = np.array(states)
+        # state0_batch_with_action.insert(self.critic_action_input_idx, np.array([action]))
+        # print(states, action)
+        # print(inp)
+        st = np.array(state)
+        st.reshape((12, 1,))
+        action.reshape((1,1,))
+        return self.critic.predict({'observation_input': np.array([st]), 'action_input':np.array([action])})
+
     def get_random_action(self, state, patch_number, patch_number_max, p_rnd=None, generate_random=True):
         if p_rnd is None:
             max_number = patch_number_max
