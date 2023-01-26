@@ -223,8 +223,8 @@ class DeepAC:
     def read_weight(self, trained_actor_path, trained_critic_path):
         self.actor.load_weights(trained_actor_path)
         self.target_actor.load_weights(trained_actor_path)
-        # self.critic.load_weights(trained_critic_path)
-        # self.target_critic.load_weights(trained_critic_path)
+        self.critic.load_weights(trained_critic_path)
+        self.target_critic.load_weights(trained_critic_path)
 
     def save_weight(self, path):
         self.actor.save_weights(os.path.join(path, '_agent_actor_w.h5'))
