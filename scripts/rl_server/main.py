@@ -1,4 +1,5 @@
 from typing import Union
+import numpy as np
 from redis_server import RedisServer
 from ddpg import DeepAC
 import os
@@ -11,6 +12,8 @@ from multiprocessing import Manager
 import random
 import traceback
 import sys
+from logger import get_logger
+import logging
 #os.environ["CUDA_VISIBLE_DEVICES"]="1"
 #tf.config.experimental.set_visible_devices([], 'GPU')
 
@@ -33,6 +36,8 @@ actor_layers = None
 critic_layers = None
 actor_optimizer = 'sgd'
 critic_optimizer = 'sgd'
+logger = get_logger()
+logger.setLevel(level=logging.DEBUG)
 
 
 def to_bool(val: str):
@@ -136,6 +141,16 @@ class SharedBuffer:
         return f'SharedBuffer {self.index} {self.max_index} {self.step}'
 
 
+def decode_obs(obs):
+    res = f'''self.pos.r:{obs[0] * 150.0}, self.pos.th:{obs[1] * 180.0}, self.body.degree:{obs[2] * 180.0}, self.pos.x:{obs[3] * 52.5}, self.pos.y:{obs[4] * 34.0}, ball.pos.r:{obs[5] * 150.0}, ball.pos.th:{obs[6] * 180.0}, ball.pos.x:{obs[7] * 52.5}, ball.pos.y:{obs[8] * 34.0}, (ball.pos - self.pos).th:{obs[9] * 180.5}, ball.pos.dist(self.pos)){obs[10] * 150.0}, (ball.pos - self.pos).th() - self.body{obs[11] * 180.0}'''
+    return res
+
+
+def decode_act(act):
+    res = f'''{act[0] * 180.0}'''
+    return res
+
+
 class PythonRLTrainer:
     def __init__(self,
                  shared_buffer: SharedBuffer,
@@ -165,6 +180,10 @@ class PythonRLTrainer:
         self.out_path = os.path.join('res', run_name + '_' + start_time, str(db_number))
         os.makedirs(self.out_path, exist_ok=True)
         self.init_trainer()
+        self.patch_number = 0
+        self.train_episode_number = 0
+        self.test_episode_number = 0
+        self.is_train = True
 
     def add_trainer_info(self, pre_num_cycle, values, is_train):
         cycle = int(pre_num_cycle.split('_')[-1])
@@ -238,13 +257,16 @@ class PythonRLTrainer:
 
     def wait_for_trainer(self):
         global done
+        logger.info('Wait for trainer')
         key, msg = self.rd.get_msg_from(num=0, cycle=None, done=done)
+        logger.info(f'Receive from trainer: {key}, {msg}')
         if done.value == 1:
             return
         self.cycle = msg + 1
         if not isinstance(msg, int):
             raise Exception('the start message from trainer should be int.')
         self.rd.set_msg(key, 'OK')
+        logger.info(f'Send OK to trainer')
 
     def init_trainer(self):
         self.wait_for_trainer()
@@ -274,84 +296,105 @@ class PythonRLTrainer:
         if received_actor is not None:
             self.rl.update_actor(received_actor)
 
-    def run(self):
-        patch_number = 0
-        train_episode_number = 0
-        test_episode_number = 0
-        is_train = True
+    def run_trainer_one_step(self):
+        pre_num_cycle, values = self.rd.get_msg_from(num=0, msg_length=[2], cycle=self.cycle, wait_time_second=1, done=done)
+        logger.info(f'trainer received({self.cycle}): {pre_num_cycle}, {values}')
+        if pre_num_cycle is None:
+            logger.info(f'trainer sent ' + RedisServer.FROM_AGENT_PRE_POSE + '_' + str(0) + '_' + str(self.cycle) + ', OK')
+            self.rd.set_msg(RedisServer.FROM_AGENT_PRE_POSE + '_' + str(0) + '_' + str(self.cycle), 'OK')
+        else:
+            self.cycle = int(pre_num_cycle.split('_')[-1])
+            is_start, is_done, status, reward = self.add_trainer_info(pre_num_cycle, values, self.is_train)
+            logger.info(f'cycle:{self.cycle} is_start:{is_start} is_done:{is_done} status:{status} reward:{reward}')
+            if not is_start:
+                self.latest_episode_rewards.append(reward)
+            logger.info(f'trainer sent ' + f'{pre_num_cycle}' + ', OK')
+            self.rd.set_msg(pre_num_cycle, 'OK')
+            if is_start:  # start
+                self.rl.random_process.reset_states()
+            elif is_done:  # end
+                if self.is_train:
+                    self.training_episode_res.append(status)
+                    self.training_episode_com_rewards.append(sum(self.latest_episode_rewards))
+                    self.latest_episode_rewards = []
+                    self.train_episode_number += 1
+                    if self.train_episode_number == train_episode_number_max:
+                        self.is_train = False
+                        self.train_episode_number = 0
+                else:
+                    self.testing_episode_res.append(status)
+                    self.testing_episode_com_rewards.append(sum(self.latest_episode_rewards))
+                    self.latest_episode_rewards = []
+                    self.test_episode_number += 1
+                    if self.test_episode_number == test_episode_number_max:
+                        self.is_train = True
+                        self.test_episode_number = 0
+                        self.patch_number += 1
+                if self.patch_number == patch_number_max:
+                    self.end_function()
+                    return False
+        return True
 
+    def run_player_one_step(self):
+        pre_num_cycle, msg = self.rd.get_msg_from(num=1, msg_length=[obs_size], cycle=self.cycle, wait_time_second=0.5, done=done)
+        logger.warning(f'player received({self.cycle}): {pre_num_cycle}, {msg}')
+        if pre_num_cycle is not None:
+            if isinstance(msg, str):  # FAKE message
+                logger.warning(f'player sent ' + f'{pre_num_cycle}' + ', OK' + ' (Fake MSG)')
+                self.rd.set_msg(pre_num_cycle, "OK")
+            else:
+                logger.warning(decode_obs(msg))
+                if self.is_train:
+                    self.add_player_info(pre_num_cycle, msg)
+                random_percentage = 0.0
+                if self.is_train and train_random_action:
+                    if decreased_random:
+                        random_percentage = None
+                    else:
+                        random_percentage = 1 - best_action_percent
+                if not self.is_train and test_random_action:
+                    random_percentage = 1 - best_action_percent
+
+                action_arr = self.rl.get_random_action(msg, self.patch_number, patch_number_max, random_percentage, generate_random)
+                logger.warning(f'q: {self.rl.get_q(msg, action_arr)}')
+                # for a in range(-18, 18):
+                #     ac = np.array([a * 10.0 / 180.0])
+                #     ac = ac.reshape((1,))
+                #     logger.warning(f'a:{a * 10.0}q: {self.rl.get_q(msg, ac)}')
+                action_tmp = action_arr.tolist()
+                action = []
+                for a in action_tmp:
+                    action.append(float(a))
+                logger.warning(f'player selected action: {action_arr}:{decode_act(action)}')
+                logger.warning(f'player sent {pre_num_cycle}, {action}')
+                self.rd.set_msg(pre_num_cycle, action)
+                if self.is_train:
+                    self.add_player_action(pre_num_cycle, action)
+        else:
+            logger.warning(f'player sent ' + ' response old msg')
+            self.response_old_message()
+
+    def run(self):
+        logger.critical('Start')
         while True:
             if self.get_model:
                 self.get_and_update_actor()
-            if done.value == 1 or patch_number % 50 == 0:
+            if done.value == 1 or self.patch_number % 50 == 0:
                 self.end_function()
             if done.value == 1:
                 break
-            pre_num_cycle, values = self.rd.get_msg_from(num=0, msg_length=[2], cycle=self.cycle, wait_time_second=1, done=done)
-            if pre_num_cycle is None:
-                self.rd.set_msg(RedisServer.FROM_AGENT_PRE_POSE + '_' + str(0) + '_' + str(self.cycle), 'OK')
-            if pre_num_cycle is not None:
-                self.cycle = int(pre_num_cycle.split('_')[-1])
-                is_start, is_done, status, reward = self.add_trainer_info(pre_num_cycle, values, is_train)
-                if not is_start:
-                    self.latest_episode_rewards.append(reward)
-                self.rd.set_msg(pre_num_cycle, 'OK')
-                if is_start:  # start
-                    self.rl.random_process.reset_states()
-                elif is_done:  # end
-                    if is_train:
-                        self.training_episode_res.append(status)
-                        self.training_episode_com_rewards.append(sum(self.latest_episode_rewards))
-                        self.latest_episode_rewards = []
-                        train_episode_number += 1
-                        if train_episode_number == train_episode_number_max:
-                            is_train = False
-                            train_episode_number = 0
-                    else:
-                        self.testing_episode_res.append(status)
-                        self.testing_episode_com_rewards.append(sum(self.latest_episode_rewards))
-                        self.latest_episode_rewards = []
-                        test_episode_number += 1
-                        if test_episode_number == test_episode_number_max:
-                            is_train = True
-                            test_episode_number = 0
-                            patch_number += 1
-                    if patch_number == patch_number_max:
-                        self.end_function()
-                        break
 
-            pre_num_cycle, msg = self.rd.get_msg_from(num=1, msg_length=[obs_size], cycle=self.cycle, wait_time_second=0.5, done=done)
-            if pre_num_cycle is not None:
-                if isinstance(msg, str):  # FAKE message
-                    self.rd.set_msg(pre_num_cycle, "OK")
-                else:
-                    if is_train:
-                        self.add_player_info(pre_num_cycle, msg)
-                    random_percentage = 0.0
-                    if is_train and train_random_action:
-                        if decreased_random:
-                            random_percentage = None
-                        else:
-                            random_percentage = 1 - best_action_percent
-                    if not is_train and test_random_action:
-                        random_percentage = 1 - best_action_percent
+            if not self.run_trainer_one_step():
+                break
 
-                    action_arr = self.rl.get_random_action(msg, patch_number, patch_number_max, random_percentage, generate_random)
-                    action_tmp = action_arr.tolist()
-                    action = []
-                    for a in action_tmp:
-                        action.append(float(a))
-                    self.rd.set_msg(pre_num_cycle, action)
-                    if is_train:
-                        self.add_player_action(pre_num_cycle, action)
-            else:
-                self.response_old_message()
-            if is_train:
+            self.run_player_one_step()
+
+            if self.is_train:
                 self.add_data_to_buffer(self.cycle)
                 if self.train_embedded:
                     self.rl.update(32)
             self.cycle += 1
-        print('done manager')
+        logger.critical('End')
 
 
 def run_manager(shared_buffer: SharedBuffer, model_receiver_q: Queue, db, start_time, train_embedded, get_model):
