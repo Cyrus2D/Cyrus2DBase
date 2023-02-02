@@ -53,6 +53,7 @@
 #include "view_tactical.h"
 
 #include "intention_receive.h"
+#include "data_extractor/offensive_data_extractor.h"
 
 #include <rcsc/action/basic_actions.h>
 #include <rcsc/action/bhv_emergency.h>
@@ -249,6 +250,10 @@ SamplePlayer::actionImpl()
     //
     // special situations (tackle, objects accuracy, intention...)
     //
+
+    OffensiveDataExtractor::i().generate_save_data(world());
+
+
     if ( doPreprocess() )
     {
         dlog.addText( Logger::TEAM,

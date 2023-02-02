@@ -5,3 +5,8 @@ sample_trainer
 start.sh
 train.sh
 
+build/
+cmake-build-debug/
+*.iml
+*.xml
+.idea/

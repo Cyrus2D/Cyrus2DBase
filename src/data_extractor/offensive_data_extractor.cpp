@@ -21,7 +21,7 @@
 #define ADD_ELEM(key, value) features.push_back(value)
 
 double invalid_data_ = -2.0;
-bool OffensiveDataExtractor::active = false;
+bool OffensiveDataExtractor::active = true;
 
 using namespace rcsc;
 
@@ -35,16 +35,16 @@ OffensiveDataExtractor::~OffensiveDataExtractor() {
 
 
 OffensiveDataExtractor::Option::Option() {
-    cycle = false; //
+    cycle = true; //
     ball_pos = true;
-    unum = BOTH;
+    unum = NONE;
     pos = BOTH;
-    relativePos = BOTH;
-    polarPos = BOTH;
-    isKicker = TM;
-    openAnglePass = TM;
-    nearestOppDist = TM;
-    in_offside = TM;
+    relativePos = NONE;
+    polarPos = NONE;
+    isKicker = NONE;
+    openAnglePass = NONE;
+    nearestOppDist = NONE;
+    in_offside = NONE;
     use_convertor = true;
 }
 
@@ -60,13 +60,15 @@ void OffensiveDataExtractor::init_file(DEState &state) {
     time(&rawtime);
     timeinfo = localtime(&rawtime);
 
-    std::string dir = "/data1/nader/workspace/robo/base_data/";
+    std::string dir = "/home/aref/de-data/";
     strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H-%M-%S", timeinfo);
     std::string str(buffer);
     std::string rand_name = std::to_string(SamplePlayer::player_port);
     str += "_" + std::to_string(state.wm().self().unum()) + "_" + state.wm().theirTeamName() + "_E" + rand_name + ".csv";
 
+    std::cout << "KIR" << std::endl;
     fout = std::ofstream((dir + str).c_str());
+    std::cout << "KIR2" << std::endl;
     std::string header = get_header();
     #ifdef ODEDebug
         dlog.addText(Logger::BLOCK, header.c_str());
@@ -148,15 +150,15 @@ std::string OffensiveDataExtractor::get_header() {
     return header;
 }
 
-void OffensiveDataExtractor::generate_save_data(const WorldModel & wm, const CooperativeAction &action,bool update_shoot) {
+void OffensiveDataExtractor::generate_save_data(const WorldModel & wm) {
     if(!OffensiveDataExtractor::active)
         return;
     if (last_update_cycle == wm.time().cycle())
         return;
-    if (!wm.self().isKickable())
-        return;
     if (wm.gameMode().type() != rcsc::GameMode::PlayOn)
         return;
+    if (wm.self().unum() != 2)
+        return
 
     #ifdef ODEDebug
     dlog.addText(Logger::BLOCK, "start update");
@@ -171,19 +173,6 @@ void OffensiveDataExtractor::generate_save_data(const WorldModel & wm, const Coo
     last_update_cycle = wm.time().cycle();
     features.clear();
 
-    if (!update_shoot){
-        if (
-                action.category() > 2
-                ||
-                !action.targetPoint().isValid()
-                ||
-                action.targetPlayerUnum() > 11
-                ||
-                action.targetPlayerUnum() < 1
-                )
-            return;
-    }
-
     // cycle
     if (option.cycle)
         ADD_ELEM("cycle", convertor_cycle(last_update_cycle));
@@ -195,14 +184,6 @@ void OffensiveDataExtractor::generate_save_data(const WorldModel & wm, const Coo
     extract_players(state);
 
     // output
-    if (!update_shoot){
-        extract_output(state,
-                       action.category(),
-                       action.targetPoint(),
-                       action.targetPlayerUnum(),
-                       action.description(),
-                       action.firstBallSpeed());
-    }
     for (int i = 0; i < features.size(); i++){
         if ( i == features.size() - 1){
             fout<<features[i];
