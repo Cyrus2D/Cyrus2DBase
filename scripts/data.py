@@ -78,7 +78,7 @@ def create_episodes_rnn(data):
                 ep_x.append(x)
                 ep_y.append(y)
             ep_x = np.array(ep_x)
-            ep_y = np.array(ep_y)
+            ep_y = np.array(ep_y[-1])
             all_x.append(ep_x)
             all_y.append(ep_y)
     return all_x, all_y

@@ -7,7 +7,7 @@ TRAIN_PERCENT = 0.7
 
 def create_model_RNN(episode_duration):
     model = tf.keras.Sequential()
-    model.add(tf.keras.layers.LSTM(256, input_shape=(episode_duration, 44)))
+    model.add(tf.keras.layers.SimpleRNN(128, input_shape=(episode_duration, 44)))
     model.add(tf.keras.layers.Dense(128, activation='relu'))
     model.add(tf.keras.layers.Dense(2, activation='linear'))
 
