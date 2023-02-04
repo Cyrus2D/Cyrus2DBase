@@ -54,14 +54,13 @@ def read_file(file_name):
 def get_data():
     all_x = []
     all_y = []
-    files = os.listdir('data/')[10:]
+    files = os.listdir('data/')[:100]
     csv_files = []
     print('Reading-data...', end='')
     for file in files:
         if file.split('.')[-1] != 'csv':
             continue
         csv_files.append(file)
-        break
     pool = Pool(processes=20)
     res = pool.map(read_file, csv_files)
     for r in res:
