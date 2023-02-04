@@ -5,6 +5,7 @@ import os
 
 episode_duration = 10
 
+
 def create_episodes_dnn(data):
     episodes = []
     last_cycle = None
@@ -31,7 +32,7 @@ def create_episodes_dnn(data):
         for j in range(ep[0], ep[1] + 1 - episode_duration):
             ep_x = []
             ep_y = []
-            for i in range(j, j+episode_duration):
+            for i in range(j, j + episode_duration):
                 xy = data[i]
                 xy = np.delete(xy, [0, 3, 4])
                 x = np.delete(xy, [32, 33])
@@ -43,6 +44,7 @@ def create_episodes_dnn(data):
             all_x.append(ep_x)
             all_y.append(ep_y)
     return all_x, all_y
+
 
 def create_episodes_rnn(data):
     episodes = []
@@ -70,11 +72,11 @@ def create_episodes_rnn(data):
         for j in range(ep[0], ep[1] + 1 - episode_duration):
             ep_x = []
             ep_y = []
-            for i in range(j, j+episode_duration):
+            for i in range(j, j + episode_duration):
                 xy = data[i]
                 xy = np.delete(xy, [0, 3, 4])
                 x = np.array(xy)
-                if np.random.uniform(0,1) < 0.3:
+                if np.random.uniform(0, 1) < 0.9:
                     x[32] = -1
                     x[33] = -1
                 y = xy[:][32:34]
@@ -85,6 +87,7 @@ def create_episodes_rnn(data):
             all_x.append(ep_x)
             all_y.append(ep_y)
     return all_x, all_y
+
 
 def read_file(file_name):
     xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[1:, :]
