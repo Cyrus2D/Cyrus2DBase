@@ -5,6 +5,16 @@ import numpy as np
 TRAIN_PERCENT = 0.7
 
 
+def create_model_RNN(episode_duration):
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.LSTM(256, input_shape=(episode_duration, 44)))
+    model.add(tf.keras.layers.Dense(128, activation='relu'))
+    model.add(tf.keras.layers.Dense(2, activation='linear'))
+
+    model.compile(optimizer='adam', loss='mse')
+    return model
+
+
 def create_model_LSTM(episode_duration):
     model = tf.keras.Sequential()
     model.add(tf.keras.layers.LSTM(256, input_shape=(episode_duration, 44)))
@@ -32,17 +42,8 @@ y = np.array(y)
 np.random.shuffle(x)
 np.random.shuffle(y)
 
-n = x.shape[0]
-n_train = int(n * TRAIN_PERCENT)
-
-x_train = x[:n_train]
-y_train = y[:n_train]
-
-x_test = x[n_train:]
-y_test = y[n_train:]
-
 print(x.shape)
 print(y.shape)
-model = create_model_DNN(episode_duration)
+model = create_model_RNN(episode_duration)
 
-model.fit(x, y, validation_split=0.3, epochs=10)
+model.fit(x, y, batch_size=128, validation_split=0.3, epochs=10)
