@@ -73,7 +73,10 @@ def create_episodes_rnn(data):
             for i in range(j, j+episode_duration):
                 xy = data[i]
                 xy = np.delete(xy, [0, 3, 4])
-                x = np.delete(xy, [32, 33])
+                x = np.array(xy)
+                if np.random.uniform(0,1) < 0.3:
+                    x[32] = -1
+                    x[33] = -1
                 y = xy[:][32:34]
                 ep_x.append(x)
                 ep_y.append(y)
