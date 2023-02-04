@@ -3,7 +3,7 @@ from multiprocessing.pool import Pool
 import numpy as np
 import os
 
-episode_duration = 5
+episode_duration = 10
 
 def create_episodes(data):
     episodes = []
@@ -38,6 +38,8 @@ def create_episodes(data):
                 y = xy[:][32:34]
                 ep_x.append(x)
                 ep_y.append(y)
+            ep_x = np.array(ep_x).flatten()
+            ep_y = np.array(ep_y[-1])
             all_x.append(ep_x)
             all_y.append(ep_y)
     return all_x, all_y
@@ -59,6 +61,7 @@ def get_data():
         if file.split('.')[-1] != 'csv':
             continue
         csv_files.append(file)
+        break
     pool = Pool(processes=20)
     res = pool.map(read_file, csv_files)
     for r in res:
