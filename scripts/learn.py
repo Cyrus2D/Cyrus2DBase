@@ -24,7 +24,7 @@ def create_model_LSTM(episode_duration):
     model.add(tf.keras.layers.Dense(128, activation='relu'))
     model.add(tf.keras.layers.Dense(2, activation='linear'))
 
-    model.compile(optimizer='adam', loss='mse')
+    model.compile(optimizer=tf.keras.optimizers.Adam(), loss='mse')
     return model
 
 
