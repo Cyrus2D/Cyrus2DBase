@@ -211,7 +211,7 @@ def get_test_data():
     all_y = []
     for i in range(episode_duration):
         all_x[i] = []
-    files = os.listdir('data-test/')[:70]
+    files = os.listdir('data-test/')
     csv_files = []
     print('Reading-data...', end='')
     for file in files:
