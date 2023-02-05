@@ -30,7 +30,8 @@ def create_model_LSTM(episode_duration):
 
 def create_model_DNN(episode_duration):
     model = tf.keras.Sequential()
-    model.add(tf.keras.layers.Dense(256, activation='relu', input_shape=(NX * episode_duration,)))
+    model.add(tf.keras.layers.Dense(512, activation='relu', input_shape=(NX * episode_duration,)))
+    model.add(tf.keras.layers.Dense(256, activation='relu'))
     model.add(tf.keras.layers.Dense(128, activation='relu'))
     model.add(tf.keras.layers.Dense(2, activation='linear'))
 
@@ -52,6 +53,6 @@ print(x.shape)
 print(y.shape)
 model = create_model_LSTM(episode_duration)
 
-model.fit(x, y, batch_size=128, validation_split=0.0, epochs=2)
+model.fit(x, y, batch_size=128, validation_split=0.2, epochs=5)
 
 model.save('model')
