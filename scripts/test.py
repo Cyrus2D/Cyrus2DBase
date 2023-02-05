@@ -7,12 +7,14 @@ import numpy as np
 x, y, episode_duration = get_test_data()
 print(x[0][0])
 print(y[0])
-exit()
-x = np.array(x)
+
 y = np.array(y)
 
 model = load_model('model')
 
-model.predict()
+for i in range(episode_duration):
+    yp = model.predict_on_batch(x[i])
+    print(y - yp)
+
 
 model.save('model')

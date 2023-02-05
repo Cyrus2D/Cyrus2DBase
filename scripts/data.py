@@ -107,9 +107,9 @@ def create_episodes_rnn_test(data):
             episode_start = cycle
             index_start = i
         last_cycle = cycle
+
     all_x: dict[int, list] = {}
     all_y = []
-
     for i in range(episode_duration):
         all_x[i] = []
 
@@ -134,10 +134,11 @@ def create_episodes_rnn_test(data):
             ep_y = np.array(ep_y[-1])
             for i in range(episode_duration):
                 p = ep_x[i][32], ep_x[i][33]
-                ep_x[:, 32:34] = -1
-                ep_x[i][32] = p[0]
-                ep_x[i][33] = p[1]
-                all_x[i].append(ep_x)
+                new_ep = np.array(ep_x)
+                new_ep[:, 32:34] = -1
+                new_ep[i][32] = p[0]
+                new_ep[i][33] = p[1]
+                all_x[i].append(new_ep)
             all_y.append(ep_y)
     return all_x, all_y
 
@@ -155,8 +156,10 @@ def read_file_test(file_name):
 
 
 def get_test_data():
-    all_x = []
+    all_x: dict[int, list] = {}
     all_y = []
+    for i in range(episode_duration):
+        all_x[i] = []
     files = os.listdir('data-test/')[:100]
     csv_files = []
     print('Reading-data...', end='')
@@ -167,7 +170,8 @@ def get_test_data():
     pool = Pool(processes=20)
     res = pool.map(read_file_test, csv_files)
     for r in res:
-        all_x += r[0]
+        for k, v in r[0].items():
+            all_x[k] += v
         all_y += r[1]
     print('Done!')
     return all_x, all_y, episode_duration
