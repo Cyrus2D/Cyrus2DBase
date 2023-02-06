@@ -3,7 +3,7 @@ from multiprocessing.pool import Pool
 import numpy as np
 import os
 
-episode_duration = 1
+episode_duration = 10
 
 
 class Config:
@@ -78,29 +78,16 @@ def create_episodes_rnn(data):
             episode_start = cycle
             index_start = i
         last_cycle = cycle
-    all_x = []
-    all_y = []
+    all_xy = []
     for ep in episodes:
         if ep[3] - ep[2] < episode_duration:
             continue
         for j in range(ep[0], ep[1] + 1 - episode_duration):
-            ep_x = []
-            ep_y = []
+            ep_xy = []
             for i in range(j, j + episode_duration):
-                xy = data[i]
-                xy = np.delete(xy, [0, 3, 4])
-                x = np.array(xy)
-                if np.random.uniform(0, 1) < 0.8 or True:
-                    x[32] = -1
-                    x[33] = -1
-                y = xy[:][32:34]
-                ep_x.append(x)
-                ep_y.append(y)
-            ep_x = np.array(ep_x)
-            ep_y = np.array(ep_y[-1])
-            all_x.append(ep_x)
-            all_y.append(ep_y)
-    return all_x, all_y
+                ep_xy.append(data[i])
+            all_xy.append(ep_xy)
+    return all_xy
 
 
 def create_episodes_dnn_test(data):
@@ -207,7 +194,7 @@ def create_episodes_rnn_test(data):
 
 def read_file(file_name):
     xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[:, :-1]
-    return xy
+    return create_episodes_rnn(xy)
 
 
 def read_file_test(file_name):
@@ -297,6 +284,20 @@ def normalize_data(x, y=None):
     x[:, pos_x_i] /= config.max_x
     x[:, pos_y_i] /= config.max_y
     x[:, pos_count_i] /= 30
+    if y is not None:
+        y[:, 0] /= config.max_x
+        y[:, 1] /= config.max_y
+
+
+def normalize_data_rnn(x, y=None):
+    config = Config()
+    pos_x_i = [i for i in range(0, 69, 3)]
+    pos_y_i = [i for i in range(1, 69, 3)]
+    pos_count_i = [i for i in range(2, 69, 3)]
+
+    x[:, :, pos_x_i] /= config.max_x
+    x[:, :, pos_y_i] /= config.max_y
+    x[:, :, pos_count_i] /= 30
     if y is not None:
         y[:, 0] /= config.max_x
         y[:, 1] /= config.max_y

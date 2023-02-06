@@ -1,5 +1,3 @@
-from math import floor
-
 from data import create_headers, get_data, Config, create_x_y_indexes, normalize_data
 import numpy as np
 
@@ -16,8 +14,8 @@ def dist(x1, x2):
 def dnn_vs_noise_accuracy():
     config = Config()
     xy = np.array(get_data(m=50))
-    NX, NY, NZ, max_dist, max_pos_count = accuracy_plot(False, 10, xy)
-    DX, DY, DZ, max_dist, max_pos_count = dnn_accuracy(False, 10, xy)
+    NX, NY, NZ, max_dist, max_pos_count = accuracy_plot(False, 100, xy)
+    DX, DY, DZ, max_dist, max_pos_count = dnn_accuracy(False, 100, xy)
 
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 
@@ -26,15 +24,15 @@ def dnn_vs_noise_accuracy():
     ax.set_zlabel("error")
 
     surf = ax.plot_surface(NX, NY, NZ - DZ, cmap=cm.coolwarm, antialiased=False)
-    # surf = ax.plot_surface(NX, NY, NZ, color='r', antialiased=False)
-    # surf = ax.plot_surface(NX, NY, DZ, color='b', antialiased=False)
+    # surf = ax.plot_surface(NX, NY, NZ, color='r', antialiased=True)
+    # surf = ax.plot_surface(NX, NY, DZ, color='b', antialiased=True)
     # pickle.dump(fig, open('figs/dnn-vs-poscount.pickle', 'wb'))
 
     plt.show()
 
 
 def dnn_accuracy(draw=True, n_data=100, xy=None):
-    model = tf.keras.models.load_model('model')
+    model = tf.keras.models.load_model('dnn-model')
     config = Config()
     headers = create_headers()
     if xy is None:
@@ -195,4 +193,4 @@ def pos_plot():
     plt.show()
 
 
-accuracy_plot(n_data=50)
+dnn_vs_noise_accuracy()
