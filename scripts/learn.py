@@ -72,6 +72,7 @@ xy = np.array(get_data(10))
 
 x = xy[:, x_indexes]
 y = xy[:, y_indexes]
+
 print(x)
 print(y)
 normalize_data(x, y)
