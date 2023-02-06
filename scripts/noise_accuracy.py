@@ -13,11 +13,30 @@ def dist(x1, x2):
     return ((x1[:, 0] - x2[:, 0]) ** 2 + (x1[:, 1] - x2[:, 1]) ** 2) ** 0.5
 
 
-def dnn_accuracy():
+def dnn_vs_noise_accuracy():
+    config = Config()
+    xy = np.array(get_data(m=300))
+    NX, NY, NZ, max_dist, max_pos_count = accuracy_plot(False, 10, xy)
+    DX, DY, DZ, max_dist, max_pos_count = dnn_accuracy(False, 10, xy)
+
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+
+    ax.set_xlabel("dist")
+    ax.set_ylabel("pos-count")
+    ax.set_zlabel("error")
+
+    surf = ax.plot_surface(NX, NY, NZ - DZ, cmap=cm.coolwarm, antialiased=False)
+    pickle.dump(fig, open('figs/dnn-vs-poscount.pickle', 'wb'))
+
+    plt.show()
+
+
+def dnn_accuracy(draw=True, n_data=100, xy=None):
     model = tf.keras.models.load_model('model')
     config = Config()
     headers = create_headers()
-    xy = np.array(get_data(m=10))
+    if xy is None:
+        xy = np.array(get_data(m=n_data))
 
     x_indexes, _ = create_x_y_indexes(headers)
     x = np.array(xy[:, x_indexes])
@@ -25,11 +44,7 @@ def dnn_accuracy():
     # print(x)
 
     my_pos = (xy[:, headers["tm-9-full"]])[:, :-1]
-    print(x[0])
-    print(model.predict(np.array([x[0]])))
-    print(x[1])
-    print(model.predict(np.array([x[1]])))
-    exit()
+    opp_pos_noise = model.predict(x)
     print(opp_pos_noise)
     opp_pos_noise[:, 0] *= config.max_x
     opp_pos_noise[:, 1] *= config.max_y
@@ -64,27 +79,31 @@ def dnn_accuracy():
 
     pos_count_dist = pos_count_dist / counter
 
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-
-    ax.set_xlabel("dist")
-    ax.set_ylabel("pos-count")
-    ax.set_zlabel("error")
-
     X = np.arange(0, max_dist, max_dist / (config.n_dist + 1))
     Y = np.arange(0, max_pos_count + 1, 1.)
     X, Y = np.meshgrid(X, Y)
     Z = pos_count_dist.T
 
-    surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, antialiased=False)
+    if draw:
+        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 
-    pickle.dump(fig, open('figs/accuracy.pickle', 'wb'))
-    plt.show()
+        ax.set_xlabel("dist")
+        ax.set_ylabel("pos-count")
+        ax.set_zlabel("error")
+
+        surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, antialiased=False)
+
+        pickle.dump(fig, open('figs/accuracy.pickle', 'wb'))
+        plt.show()
+    else:
+        return X, Y, Z, max_dist, max_pos_count
 
 
-def accuracy_plot():
+def accuracy_plot(draw=True, n_data=100, xy=None):
     config = Config()
     headers = create_headers()
-    xy = np.array(get_data())
+    if xy is None:
+        xy = np.array(get_data(m=n_data))
 
     my_pos = (xy[:, headers["tm-9-full"]])[:, :-1]
     opp_pos_noise = (xy[:, headers["opp-5-noise"]])[:, :-1]
@@ -118,21 +137,23 @@ def accuracy_plot():
 
     pos_count_dist = pos_count_dist / counter
 
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-
-    ax.set_xlabel("dist")
-    ax.set_ylabel("pos-count")
-    ax.set_zlabel("error")
-
     X = np.arange(0, max_dist, max_dist / (config.n_dist + 1))
     Y = np.arange(0, max_pos_count + 1, 1.)
     X, Y = np.meshgrid(X, Y)
     Z = pos_count_dist.T
 
-    surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, antialiased=False)
+    if draw:
+        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 
-    pickle.dump(fig, open('figs/accuracy.pickle', 'wb'))
-    plt.show()
+        ax.set_xlabel("dist")
+        ax.set_ylabel("pos-count")
+        ax.set_zlabel("error")
+        surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, antialiased=False)
+
+        pickle.dump(fig, open('figs/accuracy.pickle', 'wb'))
+        plt.show()
+    else:
+        return X, Y, Z, max_dist, max_pos_count
 
 
 def pos_plot():
@@ -172,4 +193,4 @@ def pos_plot():
     plt.show()
 
 
-dnn_accuracy()
+dnn_vs_noise_accuracy()

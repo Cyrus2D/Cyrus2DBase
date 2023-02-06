@@ -60,5 +60,5 @@ print(x.shape)
 print(y.shape)
 
 model = create_model_DNN(1)
-model.fit(x, y, batch_size=64, epochs=2, validation_split=0.1)
+model.fit(x, y, batch_size=64, epochs=1, validation_split=0.1)
 model.save('model')
