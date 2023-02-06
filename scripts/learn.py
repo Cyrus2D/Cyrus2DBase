@@ -8,7 +8,7 @@ NX = 46
 
 def create_model_RNN(episode_duration):
     model = tf.keras.Sequential()
-    model.add(tf.keras.layers.SimpleRNN(512,activation='relu', input_shape=(episode_duration, NX)))
+    model.add(tf.keras.layers.SimpleRNN(512, activation='relu', input_shape=(episode_duration, NX)))
     model.add(tf.keras.layers.Dense(256, activation='relu'))
     model.add(tf.keras.layers.Dense(128, activation='relu'))
     model.add(tf.keras.layers.Dense(2, activation='linear'))
@@ -39,20 +39,12 @@ def create_model_DNN(episode_duration):
     return model
 
 
-x, y, episode_duration = get_data()
+x, y, episode_duration = get_data(100)
 x = np.array(x)
 y = np.array(y)
 
-print(x[0])
-print(y[0])
+print(x.shape)
+print(y.shape)
 
 np.random.shuffle(x)
 np.random.shuffle(y)
-
-print(x.shape)
-print(y.shape)
-model = create_model_DNN(episode_duration)
-
-model.fit(x, y, batch_size=128, validation_split=0.2, epochs=5)
-
-model.save('model')
