@@ -98,6 +98,9 @@ private:
 public:
     virtual
     FieldEvaluator::ConstPtr getFieldEvaluator() const;
+
+    void extract();
+    std::ofstream fout;
 };
 
 #endif

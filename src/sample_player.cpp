@@ -165,6 +165,7 @@ SamplePlayer::~SamplePlayer()
 bool
 SamplePlayer::initImpl( CmdLineParser & cmd_parser )
 {
+    SamplePlayer::player_port = this->config().port();
     bool result = PlayerAgent::initImpl( cmd_parser );
 
     // read additional options
@@ -209,7 +210,6 @@ SamplePlayer::initImpl( CmdLineParser & cmd_parser )
                   << config().configDir() << "/kick-table]"
                   << std::endl;
     }
-
     return true;
 }
 
@@ -251,7 +251,9 @@ SamplePlayer::actionImpl()
     // special situations (tackle, objects accuracy, intention...)
     //
 
-    OffensiveDataExtractor::i().generate_save_data(world());
+//    OffensiveDataExtractor::i().generate_save_data(world());
+
+    extract();
 
 
     if ( doPreprocess() )
@@ -849,3 +851,87 @@ SamplePlayer::createActionGenerator() const
 
     return ActionGenerator::ConstPtr( g );
 }
+
+void SamplePlayer::extract() {
+    static bool first_time = true;
+
+    if (world().self().unum() != 9) {
+        return;
+    }
+    if (world().gameMode().type() != rcsc::GameMode::PlayOn) {
+        return;
+    }
+
+    if (first_time) {
+        time_t rawtime;
+        struct tm *timeinfo;
+        char buffer[80];
+
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+
+        std::string dir = "/home/aref/de-data/";
+        strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H-%M-%S", timeinfo);
+        std::string str(buffer);
+        std::string rand_name = std::to_string(SamplePlayer::player_port);
+        str += "_" + std::to_string(world().self().unum()) + "_E" + rand_name + ".csv";
+        std::cout << "***********************************************" << std::endl;
+        std::cout << dir + str << std::endl;
+        fout = std::ofstream((dir + str).c_str());
+        first_time = false;
+    }
+
+    fout << world().time().cycle() << ",";
+    fout << world().ball().pos().x << "," << world().ball().pos().y << "," << world().ball().posCount() << ",";
+    for (int i = 1; i <= 11; i++) {
+        const AbstractPlayerObject *opp = world().ourPlayer(i);
+        if (opp == nullptr) {
+            fout << -1 << "," << -1 << "," << -1 << ",";
+        } else {
+            fout << opp->pos().x << "," << opp->pos().y << "," << opp->posCount() << ",";
+        }
+    }
+    for (int i = 1; i <= 11; i++) {
+        const AbstractPlayerObject *opp = world().theirPlayer(i);
+        if (opp == nullptr) {
+            fout << -1 << "," << -1 << "," << -1 << ",";
+        } else {
+            fout << opp->pos().x << "," << opp->pos().y << "," << opp->posCount() << ",";
+        }
+    }
+
+    for (int i = 1; i <= 11; i++) {
+        const AbstractPlayerObject *opp = fullstateWorld().ourPlayer(i);
+        if (opp == nullptr) {
+            fout << -1 << "," << -1 << "," << -1 << ",";
+        } else {
+            fout << opp->pos().x << "," << opp->pos().y << "," << opp->posCount() << ",";
+        }
+    }
+    for (int i = 1; i <= 11; i++) {
+        const AbstractPlayerObject *opp = fullstateWorld().theirPlayer(i);
+        if (opp == nullptr) {
+            fout << -1 << "," << -1 << "," << -1 << ",";
+        } else {
+            fout << opp->pos().x << "," << opp->pos().y << "," << opp->posCount() << ",";
+        }
+    }
+    fout << std::endl;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

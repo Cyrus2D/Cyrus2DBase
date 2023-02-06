@@ -3,7 +3,7 @@ from multiprocessing.pool import Pool
 import numpy as np
 import os
 
-episode_duration = 50
+episode_duration = 1
 
 
 def create_episodes_dnn(data):
@@ -79,7 +79,7 @@ def create_episodes_rnn(data):
                 xy = data[i]
                 xy = np.delete(xy, [0, 3, 4])
                 x = np.array(xy)
-                if np.random.uniform(0, 1) < 0.8:
+                if np.random.uniform(0, 1) < 0.8 or True:
                     x[32] = -1
                     x[33] = -1
                 y = xy[:][32:34]
@@ -133,8 +133,8 @@ def create_episodes_dnn_test(data):
                 p = ep_x[i][32], ep_x[i][33]
                 new_ep = np.array(ep_x)
                 new_ep[:, 32:34] = -1
-                new_ep[i][32] = p[0]
-                new_ep[i][33] = p[1]
+                # new_ep[i][32] = p[0]
+                # new_ep[i][33] = p[1]
                 all_x[i].append(new_ep.flatten())
             all_y.append(ep_y)
     return all_x, all_y
@@ -197,7 +197,7 @@ def create_episodes_rnn_test(data):
 def read_file(file_name):
     xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[1:, :]
     xy[:, 0] = np.round(xy[:, 0] * 6000)
-    return create_episodes_rnn(xy)
+    return create_episodes_dnn(xy)
 
 
 def read_file_test(file_name):
@@ -211,7 +211,7 @@ def get_test_data():
     all_y = []
     for i in range(episode_duration):
         all_x[i] = []
-    files = os.listdir('data-test/')
+    files = os.listdir('data-test/')[:100]
     csv_files = []
     print('Reading-data...', end='')
     for file in files:

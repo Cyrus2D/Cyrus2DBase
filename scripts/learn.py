@@ -51,7 +51,7 @@ np.random.shuffle(y)
 
 print(x.shape)
 print(y.shape)
-model = create_model_LSTM(episode_duration)
+model = create_model_DNN(episode_duration)
 
 model.fit(x, y, batch_size=128, validation_split=0.2, epochs=5)
 

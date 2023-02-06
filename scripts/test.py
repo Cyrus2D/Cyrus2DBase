@@ -9,6 +9,7 @@ x, y, episode_duration = get_test_data()
 # print(x[1][0])
 # print(x[episode_duration-1][0])
 # print(y[0])
+# exit()
 y = np.array(y)
 
 model = load_model('model')
