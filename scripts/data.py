@@ -238,10 +238,12 @@ def get_test_data():
     return all_x, all_y, episode_duration
 
 
-def get_data(n=None):
+def get_data(n=None, m=None):
     all_xy = []
     if n is not None:
         files = os.listdir('data/')[:n]
+    elif m is not None:
+        files = os.listdir('data/')[-m:]
     else:
         files = os.listdir('data/')
     csv_files = []
@@ -271,3 +273,30 @@ def create_headers():
         headers[f'opp-{i}-full'] = list(range(103 + (i - 1) * 3, 103 + i * 3))
 
     return headers
+
+
+def create_x_y_indexes(headers: dict[str, list[int]]):
+    x_indexes = []
+    for key, value in headers.items():
+        if key in ['cycle']:
+            continue
+        if key.find('full') != -1:
+            continue
+        x_indexes += value
+
+    y_indexes = headers['opp-5-full'][:-1]
+    return x_indexes, y_indexes
+
+
+def normalize_data(x, y=None):
+    config = Config()
+    pos_x_i = [i for i in range(0, 69, 3)]
+    pos_y_i = [i for i in range(1, 69, 3)]
+    pos_count_i = [i for i in range(2, 69, 3)]
+
+    x[:, pos_x_i] /= config.max_x
+    x[:, pos_y_i] /= config.max_y
+    x[:, pos_count_i] /= 30
+    if y is not None:
+        y[:, 0] /= config.max_x
+        y[:, 1] /= config.max_y

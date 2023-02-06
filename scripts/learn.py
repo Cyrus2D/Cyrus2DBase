@@ -1,5 +1,5 @@
 import tensorflow as tf
-from data import get_data, create_headers, Config
+from data import get_data, create_headers, Config, create_x_y_indexes, normalize_data
 import numpy as np
 
 TRAIN_PERCENT = 0.7
@@ -39,31 +39,7 @@ def create_model_DNN(episode_duration):
     return model
 
 
-def create_x_y_indexes(headers: dict[str, list[int]]):
-    x_indexes = []
-    for key, value in headers.items():
-        if key in ['cycle']:
-            continue
-        if key.find('full') != -1:
-            continue
-        x_indexes += value
 
-    y_indexes = headers['opp-5-full'][:-1]
-    return x_indexes, y_indexes
-
-
-def normalize_data(x, y):
-    config = Config()
-    pos_x_i = [i for i in range(0, 69, 3)]
-    pos_y_i = [i for i in range(1, 69, 3)]
-    pos_count_i = [i for i in range(2, 69, 3)]
-
-    x[:, pos_x_i] /= config.max_x
-    x[:, pos_y_i] /= config.max_y
-    x[:, pos_count_i] /= 30
-
-    y[:, 0] /= config.max_x
-    y[:, 1] /= config.max_y
 
 
 headers = create_headers()
@@ -74,12 +50,15 @@ x = xy[:, x_indexes]
 y = xy[:, y_indexes]
 
 normalize_data(x, y)
+xy = np.concatenate((x, y), axis=1)
+np.random.shuffle(xy)
+
+x = xy[:, :-2]
+y = xy[:, -2:]
 
 print(x.shape)
 print(y.shape)
 
-np.random.shuffle(x)
-np.random.shuffle(y)
-
 model = create_model_DNN(1)
-model.fit(x, y, batch_size=64, epochs=5, validation_split=0.1)
+model.fit(x, y, batch_size=64, epochs=2, validation_split=0.1)
+model.save('model')
