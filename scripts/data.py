@@ -195,10 +195,8 @@ def create_episodes_rnn_test(data):
 
 
 def read_file(file_name):
-    xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[1:, :]
-    xy[:, 0] = np.round(xy[:, 0] * 6000)
-    return create_episodes_dnn(xy)
-
+    xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[:, :-1]
+    return xy
 
 def read_file_test(file_name):
     xy = np.genfromtxt(f'data-test/{file_name}', delimiter=',')[1:, :]
@@ -229,8 +227,7 @@ def get_test_data():
 
 
 def get_data():
-    all_x = []
-    all_y = []
+    all_xy = []
     files = os.listdir('data/')[:100]
     csv_files = []
     print('Reading-data...', end='')
@@ -241,7 +238,21 @@ def get_data():
     pool = Pool(processes=20)
     res = pool.map(read_file, csv_files)
     for r in res:
-        all_x += r[0]
-        all_y += r[1]
+        all_xy += list(r)
     print('Done!')
-    return all_x, all_y, episode_duration
+    return all_xy
+
+
+def create_headers():
+    headers = {}
+    headers['cycle'] = [0]
+    headers['ball'] = [1, 2, 3]
+
+    # 4 5 6, 7 8 9
+    for i in range(1, 12):
+        headers[f'tm-{i}-noise'] = list(range(4 + (i - 1) * 3, 4 + i * 3))  # max=4+11*3 = 37
+        headers[f'opp-{i}-noise'] = list(range(37 + (i - 1) * 3, 37 + i * 3))  # max = 37+11*3 = 33+37 = 70
+        headers[f'tm-{i}-full'] = list(range(70 + (i - 1) * 3, 70 + i * 3))  # max=70 + 33 = 103
+        headers[f'opp-{i}-full'] = list(range(103 + (i - 1) * 3, 103 + i * 3))
+
+    return headers
