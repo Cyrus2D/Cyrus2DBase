@@ -15,7 +15,7 @@ def dist(x1, x2):
 
 def dnn_vs_noise_accuracy():
     config = Config()
-    xy = np.array(get_data(m=300))
+    xy = np.array(get_data(m=50))
     NX, NY, NZ, max_dist, max_pos_count = accuracy_plot(False, 10, xy)
     DX, DY, DZ, max_dist, max_pos_count = dnn_accuracy(False, 10, xy)
 
@@ -26,7 +26,9 @@ def dnn_vs_noise_accuracy():
     ax.set_zlabel("error")
 
     surf = ax.plot_surface(NX, NY, NZ - DZ, cmap=cm.coolwarm, antialiased=False)
-    pickle.dump(fig, open('figs/dnn-vs-poscount.pickle', 'wb'))
+    # surf = ax.plot_surface(NX, NY, NZ, color='r', antialiased=False)
+    # surf = ax.plot_surface(NX, NY, DZ, color='b', antialiased=False)
+    # pickle.dump(fig, open('figs/dnn-vs-poscount.pickle', 'wb'))
 
     plt.show()
 
@@ -193,4 +195,4 @@ def pos_plot():
     plt.show()
 
 
-dnn_vs_noise_accuracy()
+accuracy_plot(n_data=50)
