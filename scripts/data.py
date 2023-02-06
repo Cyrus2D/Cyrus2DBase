@@ -226,9 +226,12 @@ def get_test_data():
     return all_x, all_y, episode_duration
 
 
-def get_data():
+def get_data(n=None):
     all_xy = []
-    files = os.listdir('data/')[:100]
+    if n is not None:
+        files = os.listdir('data/')[:n]
+    else:
+        files = os.listdir('data/')
     csv_files = []
     print('Reading-data...', end='')
     for file in files:
