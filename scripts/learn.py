@@ -1,11 +1,9 @@
 import tensorflow as tf
-from data import get_data, create_headers
+from data import get_data, create_headers, Config
 import numpy as np
 
-from noise_accuracy import Config
-
 TRAIN_PERCENT = 0.7
-NX = 46
+NX = 69
 
 
 def create_model_RNN(episode_duration):
@@ -53,6 +51,7 @@ def create_x_y_indexes(headers: dict[str, list[int]]):
     y_indexes = headers['opp-5-full'][:-1]
     return x_indexes, y_indexes
 
+
 def normalize_data(x, y):
     config = Config()
     pos_x_i = [i for i in range(0, 69, 3)]
@@ -66,21 +65,21 @@ def normalize_data(x, y):
     y[:, 0] /= config.max_x
     y[:, 1] /= config.max_y
 
+
 headers = create_headers()
 x_indexes, y_indexes = create_x_y_indexes(headers)
-xy = np.array(get_data(10))
+xy = np.array(get_data(300))
 
 x = xy[:, x_indexes]
 y = xy[:, y_indexes]
 
-print(x)
-print(y)
 normalize_data(x, y)
-print(x)
-print(y)
 
 print(x.shape)
 print(y.shape)
 
 np.random.shuffle(x)
 np.random.shuffle(y)
+
+model = create_model_DNN(1)
+model.fit(x, y, batch_size=64, epochs=5, validation_split=0.1)

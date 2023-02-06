@@ -8,17 +8,6 @@ import matplotlib.cm as cm
 import pickle
 
 
-class Config:
-    def __init__(self):
-        self.n_x = 100
-        self.n_y = 100
-
-        self.max_x = 52.5
-        self.max_y = 34.
-
-        self.n_dist = 100
-
-
 def dist(x1, x2):
     return ((x1[:, 0] - x2[:, 0]) ** 2 + (x1[:, 1] - x2[:, 1]) ** 2) ** 0.5
 

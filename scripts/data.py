@@ -6,6 +6,17 @@ import os
 episode_duration = 1
 
 
+class Config:
+    def __init__(self):
+        self.n_x = 100
+        self.n_y = 100
+
+        self.max_x = 52.5
+        self.max_y = 34.
+
+        self.n_dist = 100
+
+
 def create_episodes_dnn(data):
     episodes = []
     last_cycle = None
@@ -197,6 +208,7 @@ def create_episodes_rnn_test(data):
 def read_file(file_name):
     xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[:, :-1]
     return xy
+
 
 def read_file_test(file_name):
     xy = np.genfromtxt(f'data-test/{file_name}', delimiter=',')[1:, :]
