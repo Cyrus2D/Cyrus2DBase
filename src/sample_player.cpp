@@ -870,7 +870,7 @@ void SamplePlayer::extract() {
         time(&rawtime);
         timeinfo = localtime(&rawtime);
 
-        std::string dir = "/home/aref/de-data/";
+        std::string dir = "/data1/aref/2d/data/";
         strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H-%M-%S", timeinfo);
         std::string str(buffer);
         std::string rand_name = std::to_string(SamplePlayer::player_port);
@@ -886,7 +886,7 @@ void SamplePlayer::extract() {
     for (int i = 1; i <= 11; i++) {
         const AbstractPlayerObject *opp = world().ourPlayer(i);
         if (opp == nullptr) {
-            fout << -1 << "," << -1 << "," << -1 << ",";
+            fout << "nan" << "," << "nan" << "," << "nan" << ",";
         } else {
             fout << opp->pos().x << "," << opp->pos().y << "," << opp->posCount() << ",";
         }
@@ -894,7 +894,7 @@ void SamplePlayer::extract() {
     for (int i = 1; i <= 11; i++) {
         const AbstractPlayerObject *opp = world().theirPlayer(i);
         if (opp == nullptr) {
-            fout << -1 << "," << -1 << "," << -1 << ",";
+            fout << "nan" << "," << "nan" << "," << "nan" << ",";
         } else {
             fout << opp->pos().x << "," << opp->pos().y << "," << opp->posCount() << ",";
         }
@@ -903,7 +903,7 @@ void SamplePlayer::extract() {
     for (int i = 1; i <= 11; i++) {
         const AbstractPlayerObject *opp = fullstateWorld().ourPlayer(i);
         if (opp == nullptr) {
-            fout << -1 << "," << -1 << "," << -1 << ",";
+            fout << "nan" << "," << "nan" << "," << "nan" << ",";
         } else {
             fout << opp->pos().x << "," << opp->pos().y << "," << opp->posCount() << ",";
         }
@@ -911,7 +911,7 @@ void SamplePlayer::extract() {
     for (int i = 1; i <= 11; i++) {
         const AbstractPlayerObject *opp = fullstateWorld().theirPlayer(i);
         if (opp == nullptr) {
-            fout << -1 << "," << -1 << "," << -1 << ",";
+            fout << "nan" << "," << "nan" << "," << "nan" << ",";
         } else {
             fout << opp->pos().x << "," << opp->pos().y << "," << opp->posCount() << ",";
         }
