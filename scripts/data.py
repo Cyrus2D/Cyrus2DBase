@@ -192,7 +192,16 @@ def create_episodes_rnn_test(data):
     return all_x, all_y
 
 
-def read_file(file_name):
+def read_file(file_name_index):
+    print(f'#{file_name_index[1]}')
+    file_name = file_name_index[0]
+    xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[:, :-1]
+    return xy
+
+
+def read_file_rnn(file_name_index):
+    print(f'#{file_name_index[1]}')
+    file_name = file_name_index[0]
     xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[:, :-1]
     return create_episodes_rnn(xy)
 
@@ -235,12 +244,38 @@ def get_data(n=None, m=None):
         files = os.listdir('data/')
     csv_files = []
     print('Reading-data...', end='')
+    i = 0
     for file in files:
         if file.split('.')[-1] != 'csv':
             continue
-        csv_files.append(file)
-    pool = Pool(processes=20)
+        i += 1
+        csv_files.append((file, i))
+    pool = Pool(processes=2)
     res = pool.map(read_file, csv_files)
+    for r in res:
+        all_xy += list(r)
+    print('Done!')
+    return all_xy
+
+
+def get_data_rnn(n=None, m=None):
+    all_xy = []
+    if n is not None:
+        files = os.listdir('data/')[:n]
+    elif m is not None:
+        files = os.listdir('data/')[-m:]
+    else:
+        files = os.listdir('data/')
+    csv_files = []
+    print('Reading-data...', end='')
+    i = 0
+    for file in files:
+        if file.split('.')[-1] != 'csv':
+            continue
+        i += 1
+        csv_files.append((file, i))
+    pool = Pool(processes=2)
+    res = pool.map(read_file_rnn, csv_files)
     for r in res:
         all_xy += list(r)
     print('Done!')

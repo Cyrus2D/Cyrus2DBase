@@ -40,21 +40,25 @@ def create_model_DNN(episode_duration):
 
 headers = create_headers()
 x_indexes, y_indexes = create_x_y_indexes(headers)
-xy = np.array(get_data(300))
+print('arraying')
+xy = np.array(get_data(100))
 
 print(xy.shape)
 
+print('seperating')
 x = xy[:, :, x_indexes]
 y = xy[:, -1, y_indexes]
 
 print(x.shape)
 print(y.shape)
 
+print('normalizing')
 normalize_data_rnn(x, y)
 
 r_indexes = np.arange(x.shape[0])
 np.random.shuffle(r_indexes)
 
+print('shuffling')
 x = x[r_indexes]
 y = y[r_indexes]
 
