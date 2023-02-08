@@ -325,6 +325,16 @@ def create_labeled_y(xy, n_label, r):
 
     y = np.zeros((opp_pos_noise.shape[0], n_label ** 2))
     y[np.arange(y_index.size), y_index] = 1
+
+    r_indexes = np.arange(y.shape[0])
+    np.random.shuffle(r_indexes)
+    for i in r_indexes[:5]:
+        print(opp_pos_noise[i])
+        print(opp_pos_full[i])
+        print(opp_err[i])
+        print(index[i])
+        print(y_index[i])
+        print(np.argmax(y[i]))
     return y
 
 
