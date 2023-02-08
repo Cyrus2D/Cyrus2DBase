@@ -41,8 +41,8 @@ def create_model_DNN(episode_duration):
 
 def create_model_DNN_softmax(episode_duration):
     model = tf.keras.Sequential()
-    model.add(tf.keras.layers.Dense(64, activation='relu', input_shape=(NX,)))
-    model.add(tf.keras.layers.Dense(32, activation='relu'))
+    model.add(tf.keras.layers.Dense(2**10, activation='relu', input_shape=(NX,)))
+    model.add(tf.keras.layers.Dense(2**9, activation='relu'))
     model.add(tf.keras.layers.Dense(NY ** 2, activation='softmax'))
 
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -52,7 +52,7 @@ def create_model_DNN_softmax(episode_duration):
 headers = create_headers()
 x_indexes, y_indexes = create_x_y_indexes(headers)
 print('arraying')
-xy = np.array(get_data(10))
+xy = np.array(get_data(200))
 
 y = create_labeled_y(xy, NY, 20)
 print(xy.shape)
