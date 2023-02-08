@@ -195,14 +195,14 @@ def create_episodes_rnn_test(data):
 def read_file(file_name_index):
     print(f'#{file_name_index[1]}')
     file_name = file_name_index[0]
-    xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[:, :-1]
+    xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[:, :]
     return xy
 
 
 def read_file_rnn(file_name_index):
     print(f'#{file_name_index[1]}')
     file_name = file_name_index[0]
-    xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[:, :-1]
+    xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[:, :]
     return create_episodes_rnn(xy)
 
 
@@ -250,7 +250,7 @@ def get_data(n=None, m=None):
             continue
         i += 1
         csv_files.append((file, i))
-    pool = Pool(processes=2)
+    pool = Pool(processes=20)
     res = pool.map(read_file, csv_files)
     for r in res:
         all_xy += list(r)
@@ -308,6 +308,24 @@ def create_x_y_indexes(headers: dict[str, list[int]]):
 
     y_indexes = headers['opp-5-full'][:-1]
     return x_indexes, y_indexes
+
+
+def create_labeled_y(xy, n_label, r):
+    headers = create_headers()
+
+    opp_pos_noise = np.array(xy[:, headers['opp-5-noise']][:, :-1])
+    opp_pos_full = xy[:, headers['opp-5-full']][:, :-1]
+
+    opp_pos_noise = np.where(opp_pos_noise == [-105, -105], [0, 0], opp_pos_noise)
+
+    opp_err = opp_pos_full - opp_pos_noise
+    opp_err = np.clip(opp_err, -r / 2, r / 2)
+    index = np.floor((opp_err / r) * (n_label-1)) + n_label / 2
+    y_index = np.array(index[:, 0] * n_label + index[:, 1], dtype=np.uint32)
+
+    y = np.zeros((opp_pos_noise.shape[0], n_label ** 2))
+    y[np.arange(y_index.size), y_index] = 1
+    return y
 
 
 def normalize_data(x, y=None):

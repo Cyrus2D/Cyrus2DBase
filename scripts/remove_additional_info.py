@@ -1,15 +1,29 @@
+import multiprocessing
 import os
+import numpy as np
+
+
+def modify(file_name_index):
+    print(f"#{file_name_index[1]}")
+    file_name = file_name_index[0]
+    xy = np.genfromtxt(f'{file_name}', delimiter=',')[:, :-1]
+    x = xy[:, 1:]
+    x1 = x.reshape((x.shape[0], 45, 3))
+    invalid = x1 == [-1, -1, -1]
+    x2 = np.where(invalid, [-105, -105, 30], x1)
+    x3 = x2.reshape((x.shape[0], 135))
+    xy[:, 1:] = x3
+    np.savetxt(f'{file_name_index[0]}', xy, delimiter=',')
+
 
 files = os.listdir('data/')
+i = 0
+all_files = []
 for file in files:
     if file.split('.')[-1] != 'csv':
         continue
-    
-    print(f'data/{file}')
-    f = open(f'data/{file}', 'r')
-    lines = f.read().split('\n')
-    print(lines[0])
-    lines[0] = ','.join(lines[0].split(',')[:-4])
-    f.close()
-    f = open(f'data/{file}', 'w')
-    f.write('\n'.join(lines))
+    i += 1
+    all_files.append((f'data/{file}', i))
+
+# pool = multiprocessing.Pool(20)
+# pool.map(modify, all_files)

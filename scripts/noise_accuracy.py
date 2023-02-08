@@ -1,6 +1,8 @@
+'''
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+'''
 
 from data import create_headers, get_data, Config, create_x_y_indexes, normalize_data, normalize_data_rnn, get_data_rnn
 import numpy as np
@@ -17,17 +19,19 @@ def dist(x1, x2):
 
 def dnn_vs_noise_accuracy():
     config = Config()
-    xy = np.array(get_data(m=50))
+    xy = np.array(get_data(m=10))
     NX, NY, NZ, max_dist, max_pos_count = accuracy_plot(False, 100, xy)
     DX, DY, DZ, max_dist, max_pos_count = dnn_accuracy(False, 100, xy)
 
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-
     ax.set_xlabel("dist")
     ax.set_ylabel("pos-count")
     ax.set_zlabel("error")
 
-    surf = ax.plot_surface(NX, NY, NZ - DZ, cmap=cm.coolwarm, antialiased=False)
+    diff = NZ - DZ
+    diff = np.clip(diff, -20, 20)
+
+    surf = ax.plot_surface(NX, NY, diff, cmap=cm.coolwarm, antialiased=False)
     # surf = ax.plot_surface(NX, NY, NZ, color='r', antialiased=True)
     # surf = ax.plot_surface(NX, NY, DZ, color='b', antialiased=True)
     # pickle.dump(fig, open('figs/dnn-vs-poscount.pickle', 'wb'))
@@ -216,7 +220,9 @@ def accuracy_plot(draw=True, n_data=100, xy=None):
         pc = int(pos_count[i])
         d = int((my_dist[i] / max_dist) * config.n_dist)
         e = error[i]
+        if pc < 0: continue
 
+        print(d, pc)
         pos_count_dist[d][pc] += e
         counter[d][pc] += 1
 
@@ -285,4 +291,4 @@ def pos_plot():
     plt.show()
 
 
-rnn_vs_dnn_accuracy()
+dnn_vs_noise_accuracy()
