@@ -103,7 +103,15 @@ def rnn_vs_dnn_accuracy():
     ax.set_ylabel("pos-count")
     ax.set_zlabel("error")
 
-    surf = ax.plot_surface(DX, DY, DZ - RZ, cmap=cm.coolwarm, antialiased=False)
+    c =[]
+    diff = DZ - RZ
+    for r in diff:
+        cc = []
+        for s in r:
+            cc.append('r' if s > 0 else 'b')
+        c.append(cc)
+
+    surf = ax.plot_surface(DX, DY, diff, facecolors=c, antialiased=False)
     # surf = ax.plot_surface(NX, NY, NZ, color='r', antialiased=True)
     # surf = ax.plot_surface(NX, NY, DZ, color='b', antialiased=True)
     # pickle.dump(fig, open('figs/dnn-vs-poscount.pickle', 'wb'))
@@ -453,4 +461,4 @@ def pos_plot():
     plt.show()
 
 
-dnn_softmax_vs_dnn_accuracy()
+rnn_vs_dnn_accuracy()
