@@ -39,6 +39,59 @@ def dnn_vs_noise_accuracy():
     plt.show()
 
 
+def dnn_softmax_vs_noise_accuracy():
+    config = Config()
+    xy = np.array(get_data(m=100))
+    NX, NY, NZ, max_dist, max_pos_count = accuracy_plot(False, 100, xy)
+    DX, DY, DZ, max_dist, max_pos_count = dnn_softmax_accuracy(False, 100, xy)
+
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    ax.set_xlabel("dist")
+    ax.set_ylabel("pos-count")
+    ax.set_zlabel("error")
+
+    diff = NZ - DZ
+    diff = np.clip(diff, -20, 50)
+
+    surf = ax.plot_surface(NX, NY, diff, cmap=cm.coolwarm, antialiased=False)
+    # surf = ax.plot_surface(NX, NY, NZ, color='r', antialiased=True)
+    # surf = ax.plot_surface(NX, NY, DZ, color='b', antialiased=True)
+    # pickle.dump(fig, open('figs/dnn-vs-poscount.pickle', 'wb'))
+
+    plt.show()
+
+
+def dnn_softmax_vs_dnn_accuracy():
+    config = Config()
+    xy = np.array(get_data(m=100))
+    NX, NY, NZ, max_dist, max_pos_count = dnn_accuracy(False, 100, xy)
+    DX, DY, DZ, max_dist, max_pos_count = dnn_softmax_accuracy(False, 100, xy)
+
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    ax.set_xlabel("dist")
+    ax.set_ylabel("pos-count")
+    ax.set_zlabel("error")
+
+    diff = NZ - DZ
+    diff = np.clip(diff, -20, 50)
+
+    # c = np.where(diff>0, [255,0,0], [0,0,255])
+    c =[]
+    for r in diff:
+        cc = []
+        for s in r:
+            cc.append('r' if s > 0 else 'b')
+        c.append(cc)
+    print(c)
+
+    surf = ax.plot_surface(NX, NY, diff, facecolors=c, antialiased=False)
+    # surf = ax.plot_surface(NX, NY, NZ, color='r', antia   liased=True)
+    # surf = ax.plot_surface(NX, NY, DZ, color='b', antialiased=True)
+    # pickle.dump(fig, open('figs/dnn-vs-poscount.pickle', 'wb'))
+
+    plt.show()
+
+
 def rnn_vs_dnn_accuracy():
     config = Config()
     DX, DY, DZ, max_dist, max_pos_count = dnn_accuracy(False, 20)
@@ -186,7 +239,7 @@ def dnn_softmax_accuracy(draw=True, n_data=100, xy=None):
     for sample in opp_pos_noise:
         index.append(np.unravel_index(np.argmax(sample, axis=None), opp_pos_noise.shape[1:]))
     index = np.array(index)
-    rel_pos = (index - 20/2)/(20-1)*10
+    rel_pos = (index - 20 / 2) / (20 - 1) * 10
     opp_pos_noise = (xy[:, headers["opp-5-noise"]])[:, :-1] + rel_pos
     opp_pos_full = (xy[:, headers["opp-5-full"]])[:, :-1]
 
@@ -332,9 +385,6 @@ def accuracy_plot(draw=True, n_data=100, xy=None):
         pc = int(pos_count[i])
         d = int((my_dist[i] / max_dist) * config.n_dist)
         e = error[i]
-        if pc < 0: continue
-
-        print(d, pc)
         pos_count_dist[d][pc] += e
         counter[d][pc] += 1
 
@@ -403,4 +453,4 @@ def pos_plot():
     plt.show()
 
 
-dnn_softmax_accuracy(n_data=100)
+dnn_softmax_vs_dnn_accuracy()
