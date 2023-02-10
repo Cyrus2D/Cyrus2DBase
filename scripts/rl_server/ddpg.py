@@ -165,20 +165,18 @@ class DeepAC:
             critic_layers = [128, 64, 32]
         if actor_layers is None:
             actor_layers = [128, 64, 32]
-        self.model_type = 'param'
         input_obs = layers.Input((self.observation_size,))
         actor = layers.Dense(actor_layers[0], activation='relu')(input_obs)
         for layer in actor_layers[1:]:
             actor = layers.Dense(layer, activation='relu')(actor)
         actor = layers.Dense(self.action_size, activation='sigmoid')(actor)
+        actor = layers.Lambda(lambda a: self.clip_action(a))(actor)
         actor = keras.Model(input_obs, actor)
         actor.summary()
         self.actor = actor
 
         input_obs = layers.Input((self.observation_size,), name='observation_input')
-        # flattened_observation = layers.Flatten()(input_obs)
         action_input = layers.Input(shape=(self.action_size,), name='action_input')
-        # critic = layers.Dense(20, activation='relu')(flattened_observation)
         critic = layers.Concatenate()([input_obs, action_input])
         critic = layers.Dense(critic_layers[0], activation='relu')(critic)
         for layer in critic_layers[1:]:
