@@ -7,9 +7,8 @@ import signal
 import datetime
 from multiprocessing import Process, Pipe, Queue, connection
 from multiprocessing.connection import Connection
-from transit import Transition
+from transit import Transition, StepData, SharedBuffer
 from multiprocessing import Manager
-import random
 import traceback
 import sys
 from logger import get_logger
@@ -96,49 +95,6 @@ def handler(signum, frame):
 
 
 signal.signal(signal.SIGINT, handler)
-
-
-class StepData:
-    def __init__(self):
-        self.state = None
-        self.next_state = None
-        self.reward = None
-        self.action = None
-        self.done = False
-
-
-class SharedBuffer:
-    def __init__(self):
-        self.min_size = 1000
-        self.size = 100000
-        self.list: list[Union[StepData, None]] = Manager().list([None for _ in range(self.size)])
-        self.index = Manager().Value('i', 0)
-        self.max_index = Manager().Value('i', 0)
-        self.step = Manager().Value('i', 0)
-        self.lock = Manager().Lock()
-
-    def add(self, data):
-        with self.lock:
-            self.step.value += 1
-            index = self.index.value
-            if index > self.max_index.value:
-                self.max_index.value = index
-            self.index.value += 1
-            self.index.value = self.index.value % self.size
-        self.list[index] = data
-
-    def get_rand(self, request_number):
-        res = []
-        if self.max_index.value < self.min_size:
-            return res
-        number = min(request_number, self.max_index.value)
-        ran = [random.randint(0, self.max_index.value) for _ in range(number)]
-        for r in ran:
-            res.append(self.list[r])
-        return res
-
-    def __str__(self):
-        return f'SharedBuffer {self.index} {self.max_index} {self.step}'
 
 
 def decode_obs(obs):
