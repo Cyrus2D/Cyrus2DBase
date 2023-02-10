@@ -299,6 +299,7 @@ def create_headers():
 
 def create_x_y_indexes(headers: dict[str, list[int]]):
     x_indexes = []
+    y_indexes = []
     for key, value in headers.items():
         if key in ['cycle']:
             continue
@@ -306,7 +307,17 @@ def create_x_y_indexes(headers: dict[str, list[int]]):
             continue
         x_indexes += value
 
-    y_indexes = headers['opp-5-full'][:-1]
+    for key, value in headers.items():
+        if key in ['cycle']:
+            continue
+        if key.find('noise') != -1:
+            continue
+        if key.find('ball') != -1:
+            continue
+        if key.find('tm') != -1:
+            continue
+        y_indexes += value[:-1]
+
     return x_indexes, y_indexes
 
 
@@ -320,7 +331,7 @@ def create_labeled_y(xy, n_label, r):
 
     opp_err = opp_pos_full - opp_pos_noise
     opp_err = np.clip(opp_err, -r / 2, r / 2)
-    index = np.floor((opp_err / r) * (n_label-1)) + n_label / 2
+    index = np.floor((opp_err / r) * (n_label - 1)) + n_label / 2
     y_index = np.array(index[:, 0] * n_label + index[:, 1], dtype=np.uint32)
 
     y = np.zeros((opp_pos_noise.shape[0], n_label ** 2))
@@ -350,6 +361,24 @@ def normalize_data(x, y=None):
     if y is not None:
         y[:, 0] /= config.max_x
         y[:, 1] /= config.max_y
+
+
+def normalize_data_all(x, y=None):
+    config = Config()
+    pos_x_i = [i for i in range(0, 69, 3)]
+    pos_y_i = [i for i in range(1, 69, 3)]
+    pos_count_i = [i for i in range(2, 69, 3)]
+
+    x[:, pos_x_i] /= config.max_x
+    x[:, pos_y_i] /= config.max_y
+    x[:, pos_count_i] /= 30
+
+    pos_x_i = [i for i in range(0, 22, 2)]
+    pos_y_i = [i for i in range(1, 22, 2)]
+
+    if y is not None:
+        y[:, pos_x_i] /= config.max_x
+        y[:, pos_y_i] /= config.max_y
 
 
 def normalize_data_rnn(x, y=None):

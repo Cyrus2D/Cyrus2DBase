@@ -39,6 +39,29 @@ def dnn_vs_noise_accuracy():
     plt.show()
 
 
+def dnn_all_vs_dnn_accuracy():
+    config = Config()
+    xy = np.array(get_data(m=100))
+    NX, NY, NZ, max_dist, max_pos_count = dnn_accuracy(False, 100, xy)
+    DX, DY, DZ, max_dist, max_pos_count = dnn_all_accuracy(False, 100, xy)
+
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    ax.set_xlabel("dist")
+    ax.set_ylabel("pos-count")
+    ax.set_zlabel("error")
+
+    diff = NZ - DZ
+    print(diff)
+    diff = np.clip(diff, -20, 20)
+
+    surf = ax.plot_surface(NX, NY, diff, cmap=cm.coolwarm, antialiased=False)
+    # surf = ax.plot_surface(NX, NY, NZ, color='r', antialiased=True)
+    # surf = ax.plot_surface(NX, NY, DZ, color='b', antialiased=True)
+    # pickle.dump(fig, open('figs/dnn-vs-poscount.pickle', 'wb'))
+
+    plt.show()
+
+
 def dnn_softmax_vs_noise_accuracy():
     config = Config()
     xy = np.array(get_data(m=100))
@@ -76,7 +99,7 @@ def dnn_softmax_vs_dnn_accuracy():
     diff = np.clip(diff, -20, 50)
 
     # c = np.where(diff>0, [255,0,0], [0,0,255])
-    c =[]
+    c = []
     for r in diff:
         cc = []
         for s in r:
@@ -103,7 +126,7 @@ def rnn_vs_dnn_accuracy():
     ax.set_ylabel("pos-count")
     ax.set_zlabel("error")
 
-    c =[]
+    c = []
     diff = DZ - RZ
     for r in diff:
         cc = []
@@ -300,6 +323,74 @@ def dnn_softmax_accuracy(draw=True, n_data=100, xy=None):
         return X, Y, Z, max_dist, max_pos_count
 
 
+def dnn_all_accuracy(draw=True, n_data=100, xy=None):
+    model = tf.keras.models.load_model('dnn-all-model')
+    config = Config()
+    headers = create_headers()
+    if xy is None:
+        xy = np.array(get_data(m=n_data))
+
+    x_indexes, _ = create_x_y_indexes(headers)
+    x = np.array(xy[:, x_indexes])
+    normalize_data(x)
+    # print(x)
+
+    my_pos = (xy[:, headers["tm-9-full"]])[:, :-1]
+    opp_pos_noise = model.predict(x)[:, 8:10]
+    print(opp_pos_noise)  # 1: 0,1 # 2 2, 3
+    opp_pos_noise[:, 0] *= config.max_x
+    opp_pos_noise[:, 1] *= config.max_y
+    print(opp_pos_noise)
+    opp_pos_full = (xy[:, headers["opp-5-full"]])[:, :-1]
+
+    my_dist = dist(my_pos, opp_pos_full)
+    pos_count = (xy[:, headers["opp-5-noise"]])[:, -1]
+
+    max_pos_count = max(pos_count)
+    max_dist = max(my_dist)
+
+    pos_count_dist = [[0 for i in range(int(max_pos_count + 1))] for i in range(int(config.n_dist + 1))]
+    counter = [[0 for i in range(int(max_pos_count + 1))] for i in range(int(config.n_dist + 1))]
+
+    error = dist(opp_pos_noise, opp_pos_full)
+
+    for i in range(xy.shape[0]):
+        pc = int(pos_count[i])
+        d = int((my_dist[i] / max_dist) * config.n_dist)
+        e = error[i]
+
+        pos_count_dist[d][pc] += e
+        counter[d][pc] += 1
+
+    pos_count_dist = np.array(pos_count_dist)
+    counter = np.array(counter)
+
+    for i in range(counter.shape[0]):
+        for j in range(counter.shape[1]):
+            counter[i][j] = 1 if counter[i][j] == 0 else counter[i][j]
+
+    pos_count_dist = pos_count_dist / counter
+
+    X = np.arange(0, max_dist, max_dist / (config.n_dist + 1))
+    Y = np.arange(0, max_pos_count + 1, 1.)
+    X, Y = np.meshgrid(X, Y)
+    Z = pos_count_dist.T
+
+    if draw:
+        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+
+        ax.set_xlabel("dist")
+        ax.set_ylabel("pos-count")
+        ax.set_zlabel("error")
+
+        surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, antialiased=False)
+
+        pickle.dump(fig, open('figs/accuracy.pickle', 'wb'))
+        plt.show()
+    else:
+        return X, Y, Z, max_dist, max_pos_count
+
+
 def dnn_accuracy(draw=True, n_data=100, xy=None):
     model = tf.keras.models.load_model('dnn-model')
     config = Config()
@@ -461,4 +552,4 @@ def pos_plot():
     plt.show()
 
 
-rnn_vs_dnn_accuracy()
+dnn_all_vs_dnn_accuracy()
