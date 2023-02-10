@@ -182,6 +182,7 @@ class DeepAC:
         for layer in critic_layers[1:]:
             critic = layers.Dense(layer, activation='relu')(critic)
         critic = layers.Dense(1)(critic)
+        critic = layers.Lambda(lambda q: self.clip_q(q))(critic)
         critic = Model(inputs=[action_input, input_obs], outputs=critic)
         critic.summary()
         self.critic = critic
