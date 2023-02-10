@@ -154,6 +154,12 @@ class DeepAC:
         self.critic_optimizer = None
         pass
 
+    def clip_action(self, action):
+        return tf.math.minimum(tf.maximum(action, self.min_action), self.max_action)
+
+    def clip_q(self, q):
+        return tf.math.minimum(tf.maximum(q, self.min_q), self.max_q)
+
     def create_model_actor_critic(self, actor_layers=None, critic_layers=None, actor_optimizer='adam', critic_optimizer='adam'):
         if critic_layers is None:
             critic_layers = [128, 64, 32]
