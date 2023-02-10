@@ -124,6 +124,7 @@ class PythonRLTrainer:
         self.action_size = 1
         self.rl = DeepAC(observation_size=self.observation_size, action_size=self.action_size, shared_buffer=self.shared_buffer)
         self.rl.create_model_actor_critic(actor_layers=actor_layers, critic_layers=critic_layers, actor_optimizer=actor_optimizer, critic_optimizer=critic_optimizer)
+        # self.rl.read_weight('/home/nader/workspace/robo/Cyrus2DBase/scripts/rl_server/res/i_20230206143523/9/_agent_actor_w.h5', '/home/nader/workspace/robo/Cyrus2DBase/scripts/rl_server/res/i_20230206143523/9/_agent_critic_w.h5')
         self.rd = RedisServer(db_number)
         self.rd.client.flushdb()
         self.training_episode_com_rewards = []
@@ -201,6 +202,7 @@ class PythonRLTrainer:
             del self.data[key]
 
     def end_function(self):
+        logger.critical('saving data')
         f = open(os.path.join(self.out_path, 'training_episode_com_rewards'), 'w')
         f.write('\n'.join([str(i) for i in self.training_episode_com_rewards]))
         f = open(os.path.join(self.out_path, 'testing_episode_com_rewards'), 'w')
@@ -210,6 +212,7 @@ class PythonRLTrainer:
         f = open(os.path.join(self.out_path, 'testing_episode_res'), 'w')
         f.write('\n'.join([str(i) for i in self.testing_episode_res]))
         self.rl.save_weight(self.out_path)
+        # self.shared_buffer.save_to_file(self.out_path)
 
     def wait_for_trainer(self):
         global done
