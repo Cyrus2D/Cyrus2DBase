@@ -253,7 +253,7 @@ SamplePlayer::actionImpl()
 
 //    OffensiveDataExtractor::i().generate_save_data(world());
 
-    extract();
+//    extract();
 
 
     if ( doPreprocess() )

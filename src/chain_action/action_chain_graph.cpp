@@ -67,6 +67,75 @@ const size_t ActionChainGraph::DEFAULT_MAX_EVALUATE_LIMIT = 500;
 
 std::vector< std::pair< Vector2D, double > > ActionChainGraph::S_evaluated_points;
 
+DeepNueralNetwork *OpponentPredictor::model = new DeepNueralNetwork();
+
+void OpponentPredictor::load_dnn(){
+    static bool load_dnn = false;
+    if(!load_dnn){
+        load_dnn = true;
+        OpponentPredictor::model->ReadFromKeras("./predict-opps-pos");
+    }
+}
+
+std::vector<Vector2D*> *
+OpponentPredictor::predict(const WorldModel &wm) {
+    std::cout << "C" << std::endl;
+
+    std::vector<double> data;
+    data.push_back(wm.ball().pos().x / 52.5);
+    data.push_back(wm.ball().pos().y / 34);
+    data.push_back(wm.ball().posCount());
+
+    for (int i = 1; i <= 11; i++) {
+        const AbstractPlayerObject *p = wm.ourPlayer(i);
+        if (p == nullptr) {
+            data.push_back(-105. / 52.5);
+            data.push_back(-105. / 34);
+            data.push_back(30. / 30);
+        } else {
+            data.push_back(p->pos().x / 52.5);
+            data.push_back(p->pos().y / 34.);
+            data.push_back(p->posCount() / 30);
+        }
+    }
+    std::cout << "D" << std::endl;
+
+
+    for (int i = 1; i <= 11; i++) {
+        const AbstractPlayerObject *p = wm.theirPlayer(i);
+        if (p == nullptr) {
+            data.push_back(-105. / 52.5);
+            data.push_back(-105. / 34);
+            data.push_back(30. / 30);
+        } else {
+            data.push_back(p->pos().x / 52.5);
+            data.push_back(p->pos().y / 34.);
+            data.push_back(p->posCount() / 30);
+        }
+    }
+    std::cout << "E" << std::endl;
+
+    MatrixXd input(69, 1);
+    for (int i = 0; i < 69; i++) {
+        input(i, 0) = data[i];
+    }
+
+    std::cout << "F" << std::endl;
+
+
+    OpponentPredictor::model->Calculate(input);
+    std::cout << "G" << std::endl;
+
+
+    std::vector<Vector2D *> *opps_pos = new std::vector<Vector2D *>;
+    for (int i = 0; i < 22; i += 2) {
+        opps_pos->push_back(new Vector2D(OpponentPredictor::model->mOutput(i) * 52.5,
+                                         OpponentPredictor::model->mOutput(i + 1) * 34.));
+    }
+    std::cout << "H" << std::endl;
+
+    return opps_pos;
+}
 
 namespace {
 
@@ -398,15 +467,39 @@ public:
 
 
 double ActionChainGraph::oppMinDist(const WorldModel &wm, Vector2D point){
+    std::cout << "A" << std::endl;
     double min = 100;
+
+    std::vector<Vector2D*> * predicted_pos = OpponentPredictor().predict(wm);
     for(int i = 1; i<=11; i++){
         const AbstractPlayerObject * opp = wm.theirPlayer(i);
-        if(opp!=NULL && opp->unum()>0 && !opp->goalie()){
-            double dist = opp->pos().dist(point);
-            if(dist < min)
-                min = dist;
+        const Vector2D *pos;
+        std::cout << "I" << std::endl;
+
+        if (opp != nullptr and opp->goalie())
+            continue;
+        if (opp == nullptr) {
+            pos = (*predicted_pos)[i - 1];
+            dlog.addCircle(Logger::ACTION_CHAIN, *pos, 0.6, "#00FF00", true);
         }
+        else if(opp->posCount() > 1) {
+            pos = (*predicted_pos)[i-1];
+            dlog.addCircle(Logger::ACTION_CHAIN, *pos, 0.6, "#00FF00", true);
+            dlog.addCircle(Logger::ACTION_CHAIN, opp->pos(), 0.6, "#FF0000", true);
+
+        }
+        else{
+            pos = &(opp->pos());
+            dlog.addCircle(Logger::ACTION_CHAIN, *pos, 0.6, "#FF0000", true);
+        }
+        double dist = pos->dist(point);
+        if (dist < min)
+            min = dist;
+        std::cout << "J" << std::endl;
+
     }
+    std::cout << "B" << std::endl;
+
     return min;
 }
 #include "field_analyzer.h"
