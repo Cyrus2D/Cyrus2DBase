@@ -124,7 +124,6 @@ class DeepAC:
     def __init__(self, observation_size, action_size, shared_buffer, train_interval_step=1, target_update_interval_step=200):
         self.observation_size = observation_size
         self.action_size = action_size
-        self.model_type = ''
         self.actor: Sequential = None
         self.target_actor: Sequential = None
         self.critic: Sequential = None
@@ -147,6 +146,12 @@ class DeepAC:
         self.random_process = OrnsteinUhlenbeckProcess(size=self.action_size, theta=.15, mu=0., sigma=.1)
         self.critic_history = []
         self.update_called_number = 0
+        self.max_action = [1.0]
+        self.min_action = [-1.0]
+        self.max_q = [10.0]
+        self.min_q = [-10.0]
+        self.actor_optimizer = None
+        self.critic_optimizer = None
         pass
 
     def create_model_actor_critic(self, actor_layers=None, critic_layers=None, actor_optimizer='adam', critic_optimizer='adam'):
