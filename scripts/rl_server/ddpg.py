@@ -197,30 +197,26 @@ class DeepAC:
 
         # actor_optimizer = optimizers.RMSprop(lr=1e-4)
         if actor_optimizer == 'sgd':
-            actor_optimizer = optimizers.SGD(lr=0.001)
+            self.actor_optimizer = optimizers.SGD(lr=0.001)
         elif actor_optimizer == 'adam':
-            actor_optimizer = optimizers.Adam(lr=1e-4)
+            self.actor_optimizer = optimizers.Adam(lr=1e-4)
         else:
             raise Exception('The actor optimizer is not defined.')
-        # self.actor.compile(optimizer=actor_optimizer, loss='mse')
-        # critic_optimizer = optimizers.RMSprop(lr=1e-4)
         if critic_optimizer == 'sgd':
-            critic_optimizer = optimizers.SGD(lr=0.001)
+            self.critic_optimizer = optimizers.SGD(lr=0.001)
         elif critic_optimizer == 'adam':
-            critic_optimizer = optimizers.Adam(lr=1e-3)
+            self.critic_optimizer = optimizers.Adam(lr=1e-3)
         else:
             raise Exception('The critic optimizer is not defined.')
         if self.target_model_update < 1.:
             critic_updates = get_soft_target_model_updates(self.target_critic, self.critic, self.target_model_update)
-            critic_optimizer = AdditionalUpdatesOptimizer(critic_optimizer, critic_updates)
+            self.critic_optimizer = AdditionalUpdatesOptimizer(self.critic_optimizer, critic_updates)
 
-        self.critic.compile(optimizer=critic_optimizer, loss=clipped_error, metrics=['mae', 'mse'])
+        self.critic.compile(optimizer=self.critic_optimizer, loss=clipped_error, metrics=['mae', 'mse'])
 
         combined_inputs = []
         state_inputs = []
         for i in self.critic.input:
-            # print(i.name)
-            # print(self.critic_action_input)
             if i.name == self.critic_action_input.name:
                 combined_inputs.append([])
             else:
@@ -230,7 +226,7 @@ class DeepAC:
         combined_inputs[self.critic_action_input_idx] = self.actor(state_inputs)
         combined_output = self.critic(combined_inputs)
 
-        updates = actor_optimizer.get_updates(params=self.actor.trainable_weights, loss=-K.mean(combined_output))
+        updates = self.actor_optimizer.get_updates(params=self.actor.trainable_weights, loss=-K.mean(combined_output))
         if self.target_model_update < 1.:
             updates += get_soft_target_model_updates(self.target_actor, self.actor, self.target_model_update)
         updates += self.actor.updates
@@ -330,13 +326,8 @@ class DeepAC:
         step_in_each_update = len(transits)
         if len(transits) == 0:
             return
-        is_image_param = False
-
-        # print('buffer size:', self.buffer.i)
         states_view = []
         next_states_view = []
-        states_param = []
-        next_states_param = []
         terminal1_batch = []
         reward_batch = []
         action_batch = []
@@ -349,7 +340,6 @@ class DeepAC:
                 next_states_view.append(t.state)
             else:
                 next_states_view.append(t.next_state)
-
 
         states_view = array(states_view)
         next_states_view = array(next_states_view)
