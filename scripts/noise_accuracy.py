@@ -553,12 +553,14 @@ def pos_plot():
 
 
 def check_dnn_all():
-    data =np.genfromtxt("data-test/cycle_test", delimiter='\n')
+    data =np.array([np.genfromtxt("data-test/cycle_test", delimiter='\n')])
+    print(data)
+    print(data.shape)
     model = tf.keras.models.load_model('dnn-all-model')
 
     pp = model.predict(data)
-    for p in pp:
-        print(p)
+    for i  in range(0, 22, 2):
+        print(f'pp[{i}]: ({pp[0,i]*52.5}, {pp[0,i+1]*34})')
 
 
-check_dnn_all()
+dnn_all_accuracy()
