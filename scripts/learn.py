@@ -1,6 +1,6 @@
 import tensorflow as tf
 from data import get_data, create_headers, Config, create_x_y_indexes, normalize_data, episode_duration, \
-    normalize_data_rnn, create_labeled_y, normalize_data_all
+    normalize_data_rnn, create_labeled_y, normalize_data_all, normalize_data_rnn_all, get_data_rnn
 import numpy as np
 
 TRAIN_PERCENT = 0.7
@@ -20,10 +20,10 @@ def create_model_RNN(episode_duration):
 
 def create_model_LSTM(episode_duration):
     model = tf.keras.Sequential()
-    model.add(tf.keras.layers.LSTM(256, activation='relu', input_shape=(episode_duration, NX)))
+    model.add(tf.keras.layers.LSTM(128, activation='relu', input_shape=(episode_duration, NX)))
     # model.add(tf.keras.layers.Dense(256, activation='relu'))
-    model.add(tf.keras.layers.Dense(128, activation='relu'))
-    model.add(tf.keras.layers.Dense(2, activation='linear'))
+    model.add(tf.keras.layers.Dense(64, activation='relu'))
+    model.add(tf.keras.layers.Dense(2*11, activation='linear'))
 
     model.compile(optimizer=tf.keras.optimizers.Adam(), loss='mse')
     return model
@@ -52,7 +52,7 @@ def create_model_DNN_softmax(episode_duration):
 headers = create_headers()
 x_indexes, y_indexes = create_x_y_indexes(headers)
 print('arraying')
-xy = np.array(get_data(200))
+xy = np.array(get_data_rnn(2))
 
 # y = create_labeled_y(xy, NY, 10)
 print(xy.shape)
@@ -65,10 +65,10 @@ y = xy[:, y_indexes]
 print(x.shape)
 print(y.shape)
 print('normalizing')
-# normalize_data_rnn(x, y)
+normalize_data_rnn_all(x, y)
 # normalize_data(x, y)
 # normalize_data(x)
-normalize_data_all(x, y)
+# normalize_data_all(x, y)
 
 r_indexes = np.arange(x.shape[0])
 np.random.shuffle(r_indexes)
@@ -80,6 +80,6 @@ y = y[r_indexes]
 print(x.shape)
 print(y.shape)
 
-model = create_model_DNN(episode_duration)
+model = create_model_LSTM(episode_duration)
 model.fit(x, y, batch_size=64, epochs=3, validation_split=0.1)
-model.save('dnn-all-model')
+model.save('lstm-all-model')

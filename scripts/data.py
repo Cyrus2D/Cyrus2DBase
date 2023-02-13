@@ -274,7 +274,7 @@ def get_data_rnn(n=None, m=None):
             continue
         i += 1
         csv_files.append((file, i))
-    pool = Pool(processes=2)
+    pool = Pool(processes=20)
     res = pool.map(read_file_rnn, csv_files)
     for r in res:
         all_xy += list(r)
@@ -383,6 +383,24 @@ def normalize_data_all(x, y=None):
     if y is not None:
         y[:, pos_x_i] /= config.max_x
         y[:, pos_y_i] /= config.max_y
+
+
+def normalize_data_rnn_all(x, y=None):
+    config = Config()
+    pos_x_i = [i for i in range(0, 69, 3)]
+    pos_y_i = [i for i in range(1, 69, 3)]
+    pos_count_i = [i for i in range(2, 69, 3)]
+
+    x[:, :, pos_x_i] /= config.max_x
+    x[:, :, pos_y_i] /= config.max_y
+    x[:, :, pos_count_i] /= 30.
+
+    pos_x_i = [i for i in range(0, 22, 2)]
+    pos_y_i = [i for i in range(1, 22, 2)]
+
+    if y is not None:
+        y[:, :, pos_x_i] /= config.max_x
+        y[:, :, pos_y_i] /= config.max_y
 
 
 def normalize_data_rnn(x, y=None):

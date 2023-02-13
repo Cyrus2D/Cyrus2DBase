@@ -4,7 +4,8 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 '''
 
-from data import create_headers, get_data, Config, create_x_y_indexes, normalize_data, normalize_data_rnn, get_data_rnn
+from data import create_headers, get_data, Config, create_x_y_indexes, normalize_data, normalize_data_rnn, get_data_rnn, \
+    normalize_data_all
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -604,4 +605,26 @@ def check_dnn_all():
         print(f'pp[{i}]: ({pp[0, i] * 52.5}, {pp[0, i + 1] * 34})')
 
 
-dnn_all_accuracy(n_data=100)
+def avg_lost():
+    model = tf.keras.models.load_model('dnn-all-model')
+    config = Config()
+    headers = create_headers()
+    xy = np.array(get_data(m=100))
+
+    x_indexes, _ = create_x_y_indexes(headers)
+    x = np.array(xy[:, x_indexes])
+    normalize_data_all(x)
+
+    opp_pos_noise = model.predict(x)[:, 8:10]
+    print(opp_pos_noise)  # 1: 0,1 # 2 2, 3
+    opp_pos_noise[:, 0] *= config.max_x
+    opp_pos_noise[:, 1] *= config.max_y
+    print(opp_pos_noise)
+    opp_pos_full = (xy[:, headers["opp-5-full"]])[:, :-1]
+
+    error = dist(opp_pos_noise, opp_pos_full)
+    print(f'np.max(error): {np.max(error)}')
+    print(f'np.min(error): {np.min(error)}')
+    print(f'np.mean(error): {np.mean(error)}')
+
+avg_lost()
