@@ -552,4 +552,13 @@ def pos_plot():
     plt.show()
 
 
-dnn_all_vs_dnn_accuracy()
+def check_dnn_all():
+    data =np.genfromtxt("data-test/cycle_test", delimiter='\n')
+    model = tf.keras.models.load_model('dnn-all-model')
+
+    pp = model.predict(data)
+    for p in pp:
+        print(p)
+
+
+check_dnn_all()
