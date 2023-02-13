@@ -468,8 +468,8 @@ bool Bhv_Unmark::run(PlayerAgent *agent, const UnmarkPosition &unmark_position) 
 
 void Bhv_Unmark::load_dnn(){
     static bool load_dnn = false;
-    if(!load_dnn){
-        load_dnn = true; 
+    if(!load_dnn) {
+        load_dnn = true;
         pass_prediction->ReadFromKeras("./unmark_dnn_weights.txt");
     }
 }

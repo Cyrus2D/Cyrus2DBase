@@ -306,6 +306,8 @@ def create_x_y_indexes(headers: dict[str, list[int]]):
         if key.find('full') != -1:
             continue
         x_indexes += value
+        print(f"x {key}")
+    print(x_indexes)
 
     for key, value in headers.items():
         if key in ['cycle']:
@@ -317,6 +319,8 @@ def create_x_y_indexes(headers: dict[str, list[int]]):
         if key.find('tm') != -1:
             continue
         y_indexes += value[:-1]
+        print(f"y {key}")
+    print(y_indexes)
 
     return x_indexes, y_indexes
 

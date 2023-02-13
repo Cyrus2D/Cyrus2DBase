@@ -74,6 +74,12 @@ void OpponentPredictor::load_dnn(){
     if(!load_dnn){
         load_dnn = true;
         OpponentPredictor::model->ReadFromKeras("./predict-opps-pos");
+        std::cout << "##################"
+                  << OpponentPredictor::model->mLayers[0].mWeight
+                  << OpponentPredictor::model->mLayers[1].mWeight
+                  << OpponentPredictor::model->mLayers[2].mWeight
+                  << "###############" << OpponentPredictor::model->mLayers.size()
+                  << std::endl;
     }
 }
 
@@ -475,7 +481,12 @@ double ActionChainGraph::oppMinDist(const WorldModel &wm, Vector2D point){
     std::cout << "A" << std::endl;
     double min = 100;
 
+    std::cout << "Cycle: " << wm.time().cycle() << std::endl;
     std::vector<Vector2D*> * predicted_pos = OpponentPredictor().predict(wm);
+    for (int i = 0; i < 11; i++) {
+        std::cout <<"pp[" << i << "]: " << *(predicted_pos->at(i)) << std::endl;
+    }
+
     for(int i = 1; i<=11; i++){
         const AbstractPlayerObject * opp = wm.theirPlayer(i);
         const Vector2D *pos;
@@ -487,7 +498,7 @@ double ActionChainGraph::oppMinDist(const WorldModel &wm, Vector2D point){
             pos = (*predicted_pos)[i - 1];
             dlog.addCircle(Logger::ACTION_CHAIN, *pos, 0.6, "#00FF00", true);
         }
-        else if(opp->posCount() > 1) {
+        else if(opp->posCount() >=0) {
             pos = (*predicted_pos)[i-1];
             dlog.addCircle(Logger::ACTION_CHAIN, *pos, 0.6, "#00FF00", true);
             dlog.addCircle(Logger::ACTION_CHAIN, opp->pos(), 0.6, "#FF0000", true);
@@ -520,7 +531,7 @@ double ActionChainGraph::calcDangerEvalForTarget(const WorldModel &wm, Vector2D 
         else
             danger_eval[i] = danger_eval_base[i] / 4.0;
     }
-    double dist_opp_target = oppMinDist(wm, target);
+    double dist_opp_target = 0;
     if(dist_opp_target > 6)
         dist_opp_target = 6;
     double d = danger_eval[(int)dist_opp_target];;

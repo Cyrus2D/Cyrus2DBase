@@ -255,6 +255,11 @@ SamplePlayer::actionImpl()
 
 //    extract();
 
+    std::vector<Vector2D*> * predicted_pos = OpponentPredictor().predict(world());
+    for(int i = 1; i<=11; i++){
+        dlog.addCircle(Logger::ACTION_CHAIN, *(predicted_pos->at(i-1)), 0.6, "#00FF00", true);
+    }
+
 
     if ( doPreprocess() )
     {
