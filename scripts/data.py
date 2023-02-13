@@ -375,7 +375,7 @@ def normalize_data_all(x, y=None):
 
     x[:, pos_x_i] /= config.max_x
     x[:, pos_y_i] /= config.max_y
-    x[:, pos_count_i] /= 30
+    x[:, pos_count_i] /= 30.
 
     pos_x_i = [i for i in range(0, 22, 2)]
     pos_y_i = [i for i in range(1, 22, 2)]
