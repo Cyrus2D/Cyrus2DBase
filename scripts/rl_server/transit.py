@@ -26,6 +26,11 @@ class StepData:
         self.action = None
         self.done = False
 
+    def __repr__(self):
+        return f'{self.state}, {self.next_state}, {self.reward}, {self.action}, {self.done}'
+
+
+
 
 class SharedBuffer:
     def __init__(self):
