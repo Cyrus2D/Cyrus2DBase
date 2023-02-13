@@ -13,6 +13,7 @@ import traceback
 import sys
 from logger import get_logger
 import logging
+import threading
 #os.environ["CUDA_VISIBLE_DEVICES"]="1"
 #tf.config.experimental.set_visible_devices([], 'GPU')
 
@@ -119,13 +120,13 @@ class PythonRLTrainer:
         self.episode_com_rewards = []
         self.episode_res = []
         self.latest_episode_rewards = []
-        self.data: dict[int, StepData] = {}
+        self.raw_data: dict[int, StepData] = dict()
         self.cycle = -1
         self.out_path = os.path.join('res', run_name + '_' + start_time, str(db_number))
         os.makedirs(self.out_path, exist_ok=True)
+        self.episode_number = Manager().Value('i', 0)
+        self.local_done = Manager().Value('i', 0)
         self.init_trainer()
-        self.patch_number = 0
-        self.episode_number = 0
 
     def add_trainer_info(self, pre_num_cycle, values):
         cycle = int(pre_num_cycle.split('_')[-1])
@@ -135,66 +136,64 @@ class PythonRLTrainer:
         if is_start:
             return is_start, is_done, status, 0
         reward_cycle = cycle - 1
-        if reward_cycle not in self.data.keys():
-            self.data[reward_cycle] = StepData()
-        self.data[reward_cycle].done = is_done
-        self.data[reward_cycle].reward = values[1]
+        if reward_cycle not in self.raw_data.keys():
+            self.raw_data[reward_cycle] = StepData()
+        self.raw_data[reward_cycle].done = is_done
+        self.raw_data[reward_cycle].reward = values[1]
         if is_done:
-            self.data[reward_cycle].next_state = None
+            self.raw_data[reward_cycle].next_state = None
         return is_start, is_done, status, values[1]
 
     def add_player_info(self, pre_num_cycle, values):
         cycle = int(pre_num_cycle.split('_')[-1])
-        if cycle not in self.data.keys():
-            self.data[cycle] = StepData()
-        self.data[cycle].state = values
+        if cycle not in self.raw_data.keys():
+            self.raw_data[cycle] = StepData()
+        self.raw_data[cycle].state = values
         cycle -= 1
-        if cycle not in self.data.keys():
-            self.data[cycle] = StepData()
-        if self.data[cycle].done is False:
-            self.data[cycle].next_state = values
+        if cycle not in self.raw_data.keys():
+            self.raw_data[cycle] = StepData()
+        if self.raw_data[cycle].done is False:
+            self.raw_data[cycle].next_state = values
 
     def add_player_action(self, pre_num_cycle, action):
         cycle = int(pre_num_cycle.split('_')[-1])
-        if cycle not in self.data.keys():
-            self.data[cycle] = StepData()
-        self.data[cycle].action = action
+        if cycle not in self.raw_data.keys():
+            self.raw_data[cycle] = StepData()
+        self.raw_data[cycle].action = action
 
     def add_data_to_buffer(self, current_cycle):
         should_remove = []
-        for key in self.data.keys():
-            if self.data[key].next_state is None and self.data[key].done is False:
-                if key < current_cycle - 2:
+        for key in self.raw_data.keys():
+            if self.raw_data[key].next_state is None and self.raw_data[key].done is False:
+                if key < current_cycle - 20:
                     should_remove.append(key)
                 continue
-            if self.data[key].reward is None:
-                if key < current_cycle - 2:
+            if self.raw_data[key].reward is None:
+                if key < current_cycle - 20:
                     should_remove.append(key)
                 continue
-            if self.data[key].state is None:
-                if key < current_cycle - 2:
+            if self.raw_data[key].state is None:
+                if key < current_cycle - 20:
                     should_remove.append(key)
                 continue
-            if self.data[key].action is None:
-                if key < current_cycle - 2:
+            if self.raw_data[key].action is None:
+                if key < current_cycle - 20:
                     should_remove.append(key)
                 continue
-            self.shared_buffer.add(Transition(self.data[key].state, self.data[key].action, self.data[key].reward, self.data[key].next_state))
+            self.shared_buffer.add(Transition(self.raw_data[key].state, self.raw_data[key].action, self.raw_data[key].reward, self.raw_data[key].next_state))
             # self.rl.add_to_buffer(Transition(self.data[key].state, self.data[key].action, self.data[key].reward, self.data[key].next_state))
             should_remove.append(key)
         for key in should_remove:
-            del self.data[key]
+            del self.raw_data[key]
 
     def end_function(self):
         logger.critical('saving data')
-        f = open(os.path.join(self.out_path, 'training_episode_com_rewards'), 'w')
-        f.write('\n'.join([str(i) for i in self.training_episode_com_rewards]))
-        f = open(os.path.join(self.out_path, 'testing_episode_com_rewards'), 'w')
-        f.write('\n'.join([str(i) for i in self.testing_episode_com_rewards]))
-        f = open(os.path.join(self.out_path, 'training_episode_res'), 'w')
-        f.write('\n'.join([str(i) for i in self.training_episode_res]))
-        f = open(os.path.join(self.out_path, 'testing_episode_res'), 'w')
-        f.write('\n'.join([str(i) for i in self.testing_episode_res]))
+        f = open(os.path.join(self.out_path, 'episode_com_rewards'), 'w')
+        f.write('\n'.join([str(i) for i in self.episode_com_rewards]))
+        f = open(os.path.join(self.out_path, 'episode_res'), 'w')
+        f.write('\n'.join([str(i) for i in self.episode_res]))
+
+    def player_end_function(self):
         self.rl.save_weight(self.out_path)
         # self.shared_buffer.save_to_file(self.out_path)
 
@@ -240,11 +239,11 @@ class PythonRLTrainer:
             self.rl.update_actor(received_actor)
 
     def run_trainer_one_step(self):
-        pre_num_cycle, values = self.rd.get_msg_from(num=0, msg_length=[2], cycle=self.cycle, wait_time_second=1, done=done)
+        pre_num_cycle, values = self.rd.get_msg_from_no_cycle(num=0, msg_length=[2], wait_time_second=1, done=done)
         logger.info(f'trainer received({self.cycle}): {pre_num_cycle}, {values}')
         if pre_num_cycle is None:
-            logger.info(f'trainer sent ' + RedisServer.FROM_AGENT_PRE_POSE + '_' + str(0) + '_' + str(self.cycle) + ', OK')
-            self.rd.set_msg(RedisServer.FROM_AGENT_PRE_POSE + '_' + str(0) + '_' + str(self.cycle), 'OK')
+            logger.critical('Did not receive any message from trainer!')
+            return False
         else:
             self.cycle = int(pre_num_cycle.split('_')[-1])
             is_start, is_done, status, reward = self.add_trainer_info(pre_num_cycle, values)
@@ -259,21 +258,22 @@ class PythonRLTrainer:
                 self.episode_res.append(status)
                 self.episode_com_rewards.append(sum(self.latest_episode_rewards))
                 self.latest_episode_rewards = []
-                self.episode_number += 1
+                self.episode_number.value += 1
         return True
 
     def run_player_one_step(self):
-        pre_num_cycle, msg = self.rd.get_msg_from(num=1, msg_length=[obs_size], cycle=self.cycle, wait_time_second=0.5, done=done)
+        pre_num_cycle, msg = self.rd.get_msg_from_no_cycle(num=1, msg_length=[obs_size], wait_time_second=0.5, done=done)
         logger.warning(f'player received({self.cycle}): {pre_num_cycle}, {msg}')
         if pre_num_cycle is not None:
             if isinstance(msg, str):  # FAKE message
                 logger.warning(f'player sent ' + f'{pre_num_cycle}' + ', OK' + ' (Fake MSG)')
                 self.rd.set_msg(pre_num_cycle, "OK")
+                return False
             else:
                 logger.warning(decode_obs(msg))
                 self.add_player_info(pre_num_cycle, msg)
-                action_arr = self.rl.get_random_action(msg, self.patch_number, random_action_percentage, generate_random)
-                logger.warning(f'q: {self.rl.get_q(msg, action_arr)}')
+                action_arr = self.rl.get_random_action(msg, random_action_percentage, generate_random)
+                # logger.warning(f'q: {self.rl.get_q(msg, action_arr)}')
                 # for a in range(-18, 18):
                 #     ac = np.array([a * 10.0 / 180.0])
                 #     ac = ac.reshape((1,))
@@ -286,29 +286,43 @@ class PythonRLTrainer:
                 logger.warning(f'player sent {pre_num_cycle}, {action}')
                 self.rd.set_msg(pre_num_cycle, action)
                 self.add_player_action(pre_num_cycle, action)
-        else:
-            logger.warning(f'player sent ' + ' response old msg')
-            self.response_old_message()
+                return True
+        return False
 
-    def run(self):
-        logger.critical('Start')
+    def run_trainer(self):
         while True:
-            if self.get_model:
-                self.get_and_update_actor()
-            if done.value == 1 or self.patch_number % 50 == 0:
+            if self.episode_number.value % 1000 == 0:
                 self.end_function()
-            if self.episode_number == episode_number_max or done.value == 1:
+            if self.episode_number.value == episode_number_max or done.value == 1:
                 self.end_function()
                 break
             if not self.run_trainer_one_step():
                 break
+        self.local_done.value = 1
 
-            self.run_player_one_step()
+    def run_player(self):
+        while True:
+            if self.local_done.value == 1:
+                self.player_end_function()
+                break
+            if self.episode_number.value % 1000 == 0:
+                self.player_end_function()
+            res = self.run_player_one_step()
+            if res:
+                self.add_data_to_buffer(self.cycle)
+                if self.train_embedded:
+                    self.rl.update(32)
 
-            self.add_data_to_buffer(self.cycle)
-            if self.train_embedded:
-                self.rl.update(32)
-            self.cycle += 1
+    def run(self):
+        logger.critical('Start')
+
+        trainer_process = threading.Thread(target=self.run_trainer)
+        trainer_process.start()
+
+        self.run_player()
+
+        trainer_process.join()
+
         logger.critical('End')
 
 
