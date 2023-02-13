@@ -60,6 +60,40 @@ class RedisServer:
             # time.sleep(0.0001)
         return None, None
 
+    def get_msg_from_no_cycle(self, num, msg_length=None, wait_time_second=None, done=None):
+        start_with = RedisServer.FROM_AGENT_PRE_POSE + '_' + str(num) + '*'
+
+        start_time = time.time()
+        while True:
+            if done is not None and done.value == 1:
+                break
+            if wait_time_second:
+                waited_time = time.time() - start_time
+                if waited_time > wait_time_second:
+                    break
+            keys = self.client.keys(start_with)
+            if len(keys) == 0:
+                continue
+            key = keys[0].decode()
+            if self.client.exists(key):
+                msg_type = str(self.client.type(key).decode())
+                if msg_type == 'string':
+                    msg = str(self.client.get(key).decode())
+                    self.client.delete(key)
+                    try:
+                        msg = int(msg)
+                    except:
+                        pass
+                    return key, msg
+                elif msg_type == 'list':
+                    msg = self.client.lrange(key, 0, -1)
+                    if len(msg) in msg_length:
+                        msg_list = [float(v.decode()) for v in msg]
+                        self.client.delete(key)
+                        return key, msg_list
+            time.sleep(0.0001)
+        return None, None
+
     def set_msg(self, key, message):
         response_key = key.replace(RedisServer.FROM_AGENT_PRE_POSE, RedisServer.FROM_SERVER_PRE_POSE)
         res = 0
