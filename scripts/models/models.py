@@ -69,7 +69,8 @@ class RNN_Model:
         self.n_layers = n_layers
         self.activations = activation
         model = tf.keras.Sequential()
-        model.add(tf.keras.layers.SimpleRNN(n_layers[0], activation=activation[0], input_shape=(config.n_inputs,)))
+        model.add(tf.keras.layers.SimpleRNN(n_layers[0], activation=activation[0],
+                                            input_shape=(config.episode_duration, config.n_inputs)))
         for l, a in zip(n_layers[1:], activation[1:]):
             model.add(tf.keras.layers.Dense(l, activation=a))
         model.add(tf.keras.layers.Dense(config.n_outputs, activation='linear'))
@@ -129,7 +130,8 @@ class LSTM_Model:
         self.n_layers = n_layers
         self.activations = activation
         model = tf.keras.Sequential()
-        model.add(tf.keras.layers.LSTM(n_layers[0], activation=activation[0], input_shape=(config.n_inputs,)))
+        model.add(tf.keras.layers.LSTM(n_layers[0], activation=activation[0],
+                                       input_shape=(config.episode_duration, config.n_inputs)))
         for l, a in zip(n_layers[1:], activation[1:]):
             model.add(tf.keras.layers.Dense(l, activation=a))
         model.add(tf.keras.layers.Dense(config.n_outputs, activation='linear'))

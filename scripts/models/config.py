@@ -22,5 +22,7 @@ class Config:
 
         self.res_dir = "res/"
 
+        self.episode_duration = 10
+
 
 config = Config()

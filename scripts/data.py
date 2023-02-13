@@ -4,9 +4,6 @@ import numpy as np
 import os
 from models.config import config
 
-episode_duration = 10
-
-
 def dist(x1, x2):
     return ((x1[:, 0] - x2[:, 0]) ** 2 + (x1[:, 1] - x2[:, 1]) ** 2) ** 0.5
 
@@ -32,12 +29,12 @@ def create_episodes_dnn(data):
     all_x = []
     all_y = []
     for ep in episodes:
-        if ep[3] - ep[2] < episode_duration:
+        if ep[3] - ep[2] < config.episode_duration:
             continue
-        for j in range(ep[0], ep[1] + 1 - episode_duration):
+        for j in range(ep[0], ep[1] + 1 - config.episode_duration):
             ep_x = []
             ep_y = []
-            for i in range(j, j + episode_duration):
+            for i in range(j, j + config.episode_duration):
                 xy = data[i]
                 xy = np.delete(xy, [0, 3, 4])
                 x = np.array(xy)
@@ -74,11 +71,11 @@ def create_episodes_rnn(data):
         last_cycle = cycle
     all_xy = []
     for ep in episodes:
-        if ep[3] - ep[2] < episode_duration:
+        if ep[3] - ep[2] < config.episode_duration:
             continue
-        for j in range(ep[0], ep[1] + 1 - episode_duration):
+        for j in range(ep[0], ep[1] + 1 - config.episode_duration):
             ep_xy = []
-            for i in range(j, j + episode_duration):
+            for i in range(j, j + config.episode_duration):
                 ep_xy.append(data[i])
             all_xy.append(ep_xy)
     return all_xy
@@ -104,15 +101,15 @@ def create_episodes_dnn_test(data):
         last_cycle = cycle
     all_x: dict[int, list] = {}
     all_y = []
-    for i in range(episode_duration):
+    for i in range(config.episode_duration):
         all_x[i] = []
     for ep in episodes:
-        if ep[3] - ep[2] < episode_duration:
+        if ep[3] - ep[2] < config.episode_duration:
             continue
-        for j in range(ep[0], ep[1] + 1 - episode_duration):
+        for j in range(ep[0], ep[1] + 1 - config.episode_duration):
             ep_x = []
             ep_y = []
-            for i in range(j, j + episode_duration):
+            for i in range(j, j + config.episode_duration):
                 xy = data[i]
                 xy = np.delete(xy, [0, 3, 4])
                 x = np.array(xy)
@@ -121,7 +118,7 @@ def create_episodes_dnn_test(data):
                 ep_y.append(y)
             ep_x = np.array(ep_x)
             ep_y = np.array(ep_y[-1])
-            for i in range(episode_duration):
+            for i in range(config.episode_duration):
                 p = ep_x[i][32], ep_x[i][33]
                 new_ep = np.array(ep_x)
                 new_ep[:, 32:34] = -1
@@ -153,16 +150,16 @@ def create_episodes_rnn_test(data):
 
     all_x: dict[int, list] = {}
     all_y = []
-    for i in range(episode_duration):
+    for i in range(config.episode_duration):
         all_x[i] = []
 
     for ep in episodes:
-        if ep[3] - ep[2] < episode_duration:
+        if ep[3] - ep[2] < config.episode_duration:
             continue
-        for j in range(ep[0], ep[1] + 1 - episode_duration):
+        for j in range(ep[0], ep[1] + 1 - config.episode_duration):
             ep_x = []
             ep_y = []
-            for i in range(j, j + episode_duration):
+            for i in range(j, j + config.episode_duration):
                 xy = data[i]
                 xy = np.delete(xy, [0, 3, 4])
                 x = np.array(xy)
@@ -175,7 +172,7 @@ def create_episodes_rnn_test(data):
 
             ep_x = np.array(ep_x)
             ep_y = np.array(ep_y[-1])
-            for i in range(episode_duration):
+            for i in range(config.episode_duration):
                 p = ep_x[i][32], ep_x[i][33]
                 new_ep = np.array(ep_x)
                 new_ep[:, 32:34] = -1
@@ -209,7 +206,7 @@ def read_file_test(file_name):
 def get_test_data():
     all_x: dict[int, list] = {}
     all_y = []
-    for i in range(episode_duration):
+    for i in range(config.episode_duration):
         all_x[i] = []
     files = os.listdir('data-test/')[:100]
     csv_files = []
@@ -225,7 +222,7 @@ def get_test_data():
             all_x[k] += v
         all_y += r[1]
     print('Done!')
-    return all_x, all_y, episode_duration
+    return all_x, all_y, config.episode_duration
 
 
 def get_data(n=None, m=None):
