@@ -104,20 +104,15 @@ OpponentPredictor::predict(const WorldModel &wm) {
             data.push_back(p->pos().y / 34.);
             data.push_back((double)(p->posCount()) / 30.);
         }
-    }
-    std::cout << "D" << std::endl;
-
-
-    for (int i = 1; i <= 11; i++) {
-        const AbstractPlayerObject *p = wm.theirPlayer(i);
-        if (p == nullptr) {
+        const AbstractPlayerObject *o = wm.theirPlayer(i);
+        if (o == nullptr) {
             data.push_back(-105. / 52.5);
             data.push_back(-105. / 34);
             data.push_back(30. / 30.);
         } else {
-            data.push_back(p->pos().x / 52.5);
-            data.push_back(p->pos().y / 34.);
-            data.push_back((double)(p->posCount()) / 30.);
+            data.push_back(o->pos().x / 52.5);
+            data.push_back(o->pos().y / 34.);
+            data.push_back((double)(o->posCount()) / 30.);
         }
     }
     std::cout << "E" << std::endl;
