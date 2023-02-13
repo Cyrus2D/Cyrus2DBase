@@ -14,9 +14,6 @@ import pickle
 import tensorflow as tf
 
 
-def dist(x1, x2):
-    return ((x1[:, 0] - x2[:, 0]) ** 2 + (x1[:, 1] - x2[:, 1]) ** 2) ** 0.5
-
 
 def dnn_vs_noise_accuracy():
     config = Config()
@@ -395,7 +392,7 @@ def dnn_all_accuracy(draw=True, n_data=100, xy=None):
 
     pos_count_dist = pos_count_dist / counter
 
-    Y= np.arange(0, max_dist, max_dist / (config.n_dist + 1))
+    Y = np.arange(0, max_dist, max_dist / (config.n_dist + 1))
     X = np.arange(0, 5, 1.)
     X, Y = np.meshgrid(X, Y)
     Z = pos_count_dist[:, :5]
@@ -534,15 +531,14 @@ def accuracy_plot(draw=True, n_data=100, xy=None):
 
     pos_count_dist = pos_count_dist / counter
 
-
     Y = np.arange(0, max_dist, max_dist / (config.n_dist + 1))
     X = np.arange(0, 5, 1.)
     X, Y = np.meshgrid(X, Y)
     Z = pos_count_dist[:, :5]
 
     if draw:
-        print('mpc: ',max_pos_count)
-        print('md: ',max_dist)
+        print('mpc: ', max_pos_count)
+        print('md: ', max_dist)
         fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
         Z = np.clip(Z, -20, 20)
 
@@ -627,4 +623,74 @@ def avg_lost():
     print(f'np.min(error): {np.min(error)}')
     print(f'np.mean(error): {np.mean(error)}')
 
-avg_lost()
+
+def rnn_all_accuracy(draw=True, n_data=100, xy=None):
+    model = tf.keras.models.load_model('lstm-all-model')
+    config = Config()
+    headers = create_headers()
+    if xy is None:
+        xy = np.array(get_data_rnn(m=n_data))
+
+    x_indexes, y_indexes = create_x_y_indexes(headers)
+    x = np.array(xy[:, :, x_indexes])
+    y = np.array(xy[:, -1, y_indexes])
+    normalize_data_rnn(x)
+    # print(x)
+
+    my_pos = (xy[:, -1, headers["tm-9-full"]])[:, :-1]
+    opp_pos_noise = model.predict(x)[:, 8:10]
+    print(opp_pos_noise)
+    opp_pos_noise[:, 0] *= config.max_x
+    opp_pos_noise[:, 1] *= config.max_y
+    print(opp_pos_noise)
+    opp_pos_full = (xy[:, -1, headers["opp-5-full"]])[:, :-1]
+
+    my_dist = dist(my_pos, opp_pos_full)
+    pos_count = (xy[:, -1, headers["opp-5-noise"]])[:, -1]
+
+    max_pos_count = max(pos_count)
+    max_dist = max(my_dist)
+
+    pos_count_dist = [[0 for i in range(int(max_pos_count + 1))] for i in range(int(config.n_dist + 1))]
+    counter = [[0 for i in range(int(max_pos_count + 1))] for i in range(int(config.n_dist + 1))]
+
+    error = dist(opp_pos_noise, opp_pos_full)
+
+    for i in range(xy.shape[0]):
+        pc = int(pos_count[i])
+        d = int((my_dist[i] / max_dist) * config.n_dist)
+        e = error[i]
+
+        pos_count_dist[d][pc] += e
+        counter[d][pc] += 1
+
+    pos_count_dist = np.array(pos_count_dist)
+    counter = np.array(counter)
+
+    for i in range(counter.shape[0]):
+        for j in range(counter.shape[1]):
+            counter[i][j] = 1 if counter[i][j] == 0 else counter[i][j]
+
+    pos_count_dist = pos_count_dist / counter
+
+    X = np.arange(0, max_dist, max_dist / (config.n_dist + 1))
+    Y = np.arange(0, max_pos_count + 1, 1.)
+    X, Y = np.meshgrid(X, Y)
+    Z = pos_count_dist.T
+
+    if draw:
+        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+
+        ax.set_xlabel("dist")
+        ax.set_ylabel("pos-count")
+        ax.set_zlabel("error")
+
+        surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, antialiased=False)
+
+        pickle.dump(fig, open('figs/accuracy.pickle', 'wb'))
+        plt.show()
+    else:
+        return X, Y, Z, max_dist, max_pos_count
+
+
+rnn_all_accuracy(n_data=10)

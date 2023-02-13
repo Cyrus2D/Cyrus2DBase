@@ -23,7 +23,7 @@ def create_model_LSTM(episode_duration):
     model.add(tf.keras.layers.LSTM(128, activation='relu', input_shape=(episode_duration, NX)))
     # model.add(tf.keras.layers.Dense(256, activation='relu'))
     model.add(tf.keras.layers.Dense(64, activation='relu'))
-    model.add(tf.keras.layers.Dense(2*11, activation='linear'))
+    model.add(tf.keras.layers.Dense(2 * 11, activation='linear'))
 
     model.compile(optimizer=tf.keras.optimizers.Adam(), loss='mse')
     return model
@@ -31,8 +31,8 @@ def create_model_LSTM(episode_duration):
 
 def create_model_DNN(episode_duration):
     model = tf.keras.Sequential()
-    model.add(tf.keras.layers.Dense(2**7, activation='relu', input_shape=(NX,)))
-    model.add(tf.keras.layers.Dense(2**6, activation='relu'))
+    model.add(tf.keras.layers.Dense(2 ** 7, activation='relu', input_shape=(NX,)))
+    model.add(tf.keras.layers.Dense(2 ** 6, activation='relu'))
     model.add(tf.keras.layers.Dense(2 * 11, activation='linear'))
 
     model.compile(optimizer='adam', loss='mse')
@@ -49,21 +49,33 @@ def create_model_DNN_softmax(episode_duration):
     return model
 
 
+# TODO SPLIT DATA
+# TODO TEST AFTER LEARN
+# TODO Error number of error in range
+# TODO Error with different poscounts
+# TODO Error with different distance
+# TODO Different models (size, activition)
+# TODO RUN EVERYTHING AUTOMATE
+# TODO FILENAMES Discribe file
+
+
 headers = create_headers()
 x_indexes, y_indexes = create_x_y_indexes(headers)
 print('arraying')
-xy = np.array(get_data_rnn(2))
+xy = np.array(get_data_rnn(50))
 
 # y = create_labeled_y(xy, NY, 10)
 print(xy.shape)
 
 print('seperating')
 # x = xy[:, :, x_indexes]
+# y = xy[:, -1, y_indexes]
 x = xy[:, x_indexes]
 y = xy[:, y_indexes]
 
 print(x.shape)
 print(y.shape)
+
 print('normalizing')
 normalize_data_rnn_all(x, y)
 # normalize_data(x, y)

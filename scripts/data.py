@@ -2,19 +2,13 @@ from multiprocessing.pool import Pool
 
 import numpy as np
 import os
+from models.config import config
 
 episode_duration = 10
 
 
-class Config:
-    def __init__(self):
-        self.n_x = 100
-        self.n_y = 100
-
-        self.max_x = 52.5
-        self.max_y = 34.
-
-        self.n_dist = 100
+def dist(x1, x2):
+    return ((x1[:, 0] - x2[:, 0]) ** 2 + (x1[:, 1] - x2[:, 1]) ** 2) ** 0.5
 
 
 def create_episodes_dnn(data):
@@ -354,7 +348,6 @@ def create_labeled_y(xy, n_label, r):
 
 
 def normalize_data(x, y=None):
-    config = Config()
     pos_x_i = [i for i in range(0, 69, 3)]
     pos_y_i = [i for i in range(1, 69, 3)]
     pos_count_i = [i for i in range(2, 69, 3)]
@@ -368,7 +361,6 @@ def normalize_data(x, y=None):
 
 
 def normalize_data_all(x, y=None):
-    config = Config()
     pos_x_i = [i for i in range(0, 69, 3)]
     pos_y_i = [i for i in range(1, 69, 3)]
     pos_count_i = [i for i in range(2, 69, 3)]
@@ -386,7 +378,6 @@ def normalize_data_all(x, y=None):
 
 
 def normalize_data_rnn_all(x, y=None):
-    config = Config()
     pos_x_i = [i for i in range(0, 69, 3)]
     pos_y_i = [i for i in range(1, 69, 3)]
     pos_count_i = [i for i in range(2, 69, 3)]
@@ -399,12 +390,11 @@ def normalize_data_rnn_all(x, y=None):
     pos_y_i = [i for i in range(1, 22, 2)]
 
     if y is not None:
-        y[:, :, pos_x_i] /= config.max_x
-        y[:, :, pos_y_i] /= config.max_y
+        y[:, pos_x_i] /= config.max_x
+        y[:, pos_y_i] /= config.max_y
 
 
 def normalize_data_rnn(x, y=None):
-    config = Config()
     pos_x_i = [i for i in range(0, 69, 3)]
     pos_y_i = [i for i in range(1, 69, 3)]
     pos_count_i = [i for i in range(2, 69, 3)]
