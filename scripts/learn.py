@@ -49,16 +49,6 @@ def create_model_DNN_softmax(episode_duration):
     return model
 
 
-# TODO SPLIT DATA
-# TODO TEST AFTER LEARN
-# TODO Error number of error in range
-# TODO Error with different poscounts
-# TODO Error with different distance
-# TODO Different models (size, activition)
-# TODO RUN EVERYTHING AUTOMATE
-# TODO FILENAMES Discribe file
-
-
 headers = create_headers()
 x_indexes, y_indexes = create_x_y_indexes(headers)
 print('arraying')
