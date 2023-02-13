@@ -280,15 +280,7 @@ class DeepAC:
         action.reshape((1,1,))
         return self.critic.predict({'observation_input': np.array([st]), 'action_input':np.array([action])})
 
-    def get_random_action(self, state, patch_number, patch_number_max, p_rnd=None, generate_random=True):
-        if p_rnd is None:
-            max_number = patch_number_max
-            number = patch_number
-            max_number = max_number / 2
-            if number > max_number:
-                p_rnd = 0.1
-            else:
-                p_rnd = 1.0 + number / max_number * -0.9
+    def get_random_action(self, state, p_rnd=0.0, generate_random=True):
         best_action = self.get_best_action(state)
         if random.random() < p_rnd:
             if generate_random:
