@@ -16,9 +16,7 @@ import logging
 #os.environ["CUDA_VISIBLE_DEVICES"]="1"
 #tf.config.experimental.set_visible_devices([], 'GPU')
 
-patch_number_max = 400
-train_episode_number_max = 100
-test_episode_number_max = 20
+episode_number_max = 100 * 200
 obs_size = 12
 done = Manager().Value('i', 0)
 run_name = '1'
@@ -26,10 +24,7 @@ trainer_count = 1
 db_start = 1
 train_embedded = True
 get_model = False
-train_random_action = True
-test_random_action = True
-decreased_random = True
-best_action_percent = 0.9
+random_action_percentage = 0.1
 generate_random = True
 actor_layers = None
 critic_layers = None
@@ -68,14 +63,8 @@ if len(args) > 1:
             train_embedded = to_bool(val)
         if arg == 'get_model':
             get_model = to_bool(val)
-        if arg == 'train_random_action':
-            train_random_action = to_bool(val)
-        if arg == 'test_random_action':
-            test_random_action = to_bool(val)
-        if arg == 'decreased_random':
-            decreased_random = to_bool(val)
-        if arg == 'best_action_percent':
-            best_action_percent = float(val)
+        if arg == 'random_action_percentage':
+            random_action_percentage = float(val)
         if arg == 'generate_random':
             generate_random = to_bool(val)
         if arg == 'actor_layers':
@@ -127,10 +116,8 @@ class PythonRLTrainer:
         # self.rl.read_weight('/home/nader/workspace/robo/Cyrus2DBase/scripts/rl_server/res/i_20230206143523/9/_agent_actor_w.h5', '/home/nader/workspace/robo/Cyrus2DBase/scripts/rl_server/res/i_20230206143523/9/_agent_critic_w.h5')
         self.rd = RedisServer(db_number)
         self.rd.client.flushdb()
-        self.training_episode_com_rewards = []
-        self.testing_episode_com_rewards = []
-        self.training_episode_res = []
-        self.testing_episode_res = []
+        self.episode_com_rewards = []
+        self.episode_res = []
         self.latest_episode_rewards = []
         self.data: dict[int, StepData] = {}
         self.cycle = -1
@@ -138,25 +125,22 @@ class PythonRLTrainer:
         os.makedirs(self.out_path, exist_ok=True)
         self.init_trainer()
         self.patch_number = 0
-        self.train_episode_number = 0
-        self.test_episode_number = 0
-        self.is_train = True
+        self.episode_number = 0
 
-    def add_trainer_info(self, pre_num_cycle, values, is_train):
+    def add_trainer_info(self, pre_num_cycle, values):
         cycle = int(pre_num_cycle.split('_')[-1])
         is_done = int(values[0]) >= 2
         is_start = int(values[0]) == 0
         status = int(values[0])
         if is_start:
             return is_start, is_done, status, 0
-        if is_train:
-            reward_cycle = cycle - 1
-            if reward_cycle not in self.data.keys():
-                self.data[reward_cycle] = StepData()
-            self.data[reward_cycle].done = is_done
-            self.data[reward_cycle].reward = values[1]
-            if is_done:
-                self.data[reward_cycle].next_state = None
+        reward_cycle = cycle - 1
+        if reward_cycle not in self.data.keys():
+            self.data[reward_cycle] = StepData()
+        self.data[reward_cycle].done = is_done
+        self.data[reward_cycle].reward = values[1]
+        if is_done:
+            self.data[reward_cycle].next_state = None
         return is_start, is_done, status, values[1]
 
     def add_player_info(self, pre_num_cycle, values):
@@ -263,7 +247,7 @@ class PythonRLTrainer:
             self.rd.set_msg(RedisServer.FROM_AGENT_PRE_POSE + '_' + str(0) + '_' + str(self.cycle), 'OK')
         else:
             self.cycle = int(pre_num_cycle.split('_')[-1])
-            is_start, is_done, status, reward = self.add_trainer_info(pre_num_cycle, values, self.is_train)
+            is_start, is_done, status, reward = self.add_trainer_info(pre_num_cycle, values)
             logger.info(f'cycle:{self.cycle} is_start:{is_start} is_done:{is_done} status:{status} reward:{reward}')
             if not is_start:
                 self.latest_episode_rewards.append(reward)
@@ -272,26 +256,10 @@ class PythonRLTrainer:
             if is_start:  # start
                 self.rl.random_process.reset_states()
             elif is_done:  # end
-                if self.is_train:
-                    self.training_episode_res.append(status)
-                    self.training_episode_com_rewards.append(sum(self.latest_episode_rewards))
-                    self.latest_episode_rewards = []
-                    self.train_episode_number += 1
-                    if self.train_episode_number == train_episode_number_max:
-                        self.is_train = False
-                        self.train_episode_number = 0
-                else:
-                    self.testing_episode_res.append(status)
-                    self.testing_episode_com_rewards.append(sum(self.latest_episode_rewards))
-                    self.latest_episode_rewards = []
-                    self.test_episode_number += 1
-                    if self.test_episode_number == test_episode_number_max:
-                        self.is_train = True
-                        self.test_episode_number = 0
-                        self.patch_number += 1
-                if self.patch_number == patch_number_max:
-                    self.end_function()
-                    return False
+                self.episode_res.append(status)
+                self.episode_com_rewards.append(sum(self.latest_episode_rewards))
+                self.latest_episode_rewards = []
+                self.episode_number += 1
         return True
 
     def run_player_one_step(self):
@@ -303,18 +271,8 @@ class PythonRLTrainer:
                 self.rd.set_msg(pre_num_cycle, "OK")
             else:
                 logger.warning(decode_obs(msg))
-                if self.is_train:
-                    self.add_player_info(pre_num_cycle, msg)
-                random_percentage = 0.0
-                if self.is_train and train_random_action:
-                    if decreased_random:
-                        random_percentage = None
-                    else:
-                        random_percentage = 1 - best_action_percent
-                if not self.is_train and test_random_action:
-                    random_percentage = 1 - best_action_percent
-
-                action_arr = self.rl.get_random_action(msg, self.patch_number, patch_number_max, random_percentage, generate_random)
+                self.add_player_info(pre_num_cycle, msg)
+                action_arr = self.rl.get_random_action(msg, self.patch_number, random_action_percentage, generate_random)
                 logger.warning(f'q: {self.rl.get_q(msg, action_arr)}')
                 # for a in range(-18, 18):
                 #     ac = np.array([a * 10.0 / 180.0])
@@ -327,8 +285,7 @@ class PythonRLTrainer:
                 logger.warning(f'player selected action: {action_arr}:{decode_act(action)}')
                 logger.warning(f'player sent {pre_num_cycle}, {action}')
                 self.rd.set_msg(pre_num_cycle, action)
-                if self.is_train:
-                    self.add_player_action(pre_num_cycle, action)
+                self.add_player_action(pre_num_cycle, action)
         else:
             logger.warning(f'player sent ' + ' response old msg')
             self.response_old_message()
@@ -340,18 +297,17 @@ class PythonRLTrainer:
                 self.get_and_update_actor()
             if done.value == 1 or self.patch_number % 50 == 0:
                 self.end_function()
-            if done.value == 1:
+            if self.episode_number == episode_number_max or done.value == 1:
+                self.end_function()
                 break
-
             if not self.run_trainer_one_step():
                 break
 
             self.run_player_one_step()
 
-            if self.is_train:
-                self.add_data_to_buffer(self.cycle)
-                if self.train_embedded:
-                    self.rl.update(32)
+            self.add_data_to_buffer(self.cycle)
+            if self.train_embedded:
+                self.rl.update(32)
             self.cycle += 1
         logger.critical('End')
 
