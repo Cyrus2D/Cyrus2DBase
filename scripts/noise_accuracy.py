@@ -62,6 +62,29 @@ def dnn_all_vs_dnn_accuracy():
     plt.show()
 
 
+def dnn_all_vs_noise_accuracy():
+    config = Config()
+    xy = np.array(get_data(m=100))
+    NX, NY, NZ, max_dist, max_pos_count = accuracy_plot(False, 100, xy)
+    DX, DY, DZ, max_dist, max_pos_count = dnn_all_accuracy(False, 100, xy)
+
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    ax.set_xlabel("dist")
+    ax.set_ylabel("pos-count")
+    ax.set_zlabel("error")
+
+    diff = NZ - DZ
+    print(diff)
+    diff = np.clip(diff, -20, 20)
+
+    surf = ax.plot_surface(NX, NY, diff, cmap=cm.coolwarm, antialiased=False)
+    # surf = ax.plot_surface(NX, NY, NZ, color='r', antialiased=True)
+    # surf = ax.plot_surface(NX, NY, DZ, color='b', antialiased=True)
+    # pickle.dump(fig, open('figs/dnn-vs-poscount.pickle', 'wb'))
+
+    plt.show()
+
+
 def dnn_softmax_vs_noise_accuracy():
     config = Config()
     xy = np.array(get_data(m=100))
@@ -365,16 +388,16 @@ def dnn_all_accuracy(draw=True, n_data=100, xy=None):
     pos_count_dist = np.array(pos_count_dist)
     counter = np.array(counter)
 
-    for i in range(counter.shape[0]):
-        for j in range(counter.shape[1]):
-            counter[i][j] = 1 if counter[i][j] == 0 else counter[i][j]
+    # for i in range(counter.shape[0]):
+    #     for j in range(counter.shape[1]):
+    #         counter[i][j] = 1 if counter[i][j] == 0 else counter[i][j]
 
     pos_count_dist = pos_count_dist / counter
 
-    X = np.arange(0, max_dist, max_dist / (config.n_dist + 1))
-    Y = np.arange(0, max_pos_count + 1, 1.)
+    Y= np.arange(0, max_dist, max_dist / (config.n_dist + 1))
+    X = np.arange(0, max_pos_count + 1, 1.)
     X, Y = np.meshgrid(X, Y)
-    Z = pos_count_dist.T
+    Z = pos_count_dist
 
     if draw:
         fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
@@ -481,6 +504,8 @@ def accuracy_plot(draw=True, n_data=100, xy=None):
     error = dist(opp_pos_noise, opp_pos_full)
 
     for i in range(xy.shape[0]):
+        if xy[i, headers["opp-5-noise"]][-1] <0:
+            continue
         pc = int(pos_count[i])
         d = int((my_dist[i] / max_dist) * config.n_dist)
         e = error[i]
@@ -492,17 +517,23 @@ def accuracy_plot(draw=True, n_data=100, xy=None):
 
     for i in range(counter.shape[0]):
         for j in range(counter.shape[1]):
-            counter[i][j] = 1 if counter[i][j] == 0 else counter[i][j]
+            if counter[i][j] == 0:
+                counter[i][j] = 1
+                pos_count_dist[i][j] = 0
 
     pos_count_dist = pos_count_dist / counter
 
-    X = np.arange(0, max_dist, max_dist / (config.n_dist + 1))
-    Y = np.arange(0, max_pos_count + 1, 1.)
+
+    Y = np.arange(0, max_dist, max_dist / (config.n_dist + 1))
+    X = np.arange(0, max_pos_count + 1, 1.)
     X, Y = np.meshgrid(X, Y)
-    Z = pos_count_dist.T
+    Z = pos_count_dist
 
     if draw:
+        print('mpc: ',max_pos_count)
+        print('md: ',max_dist)
         fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+        Z = np.clip(Z, -20, 20)
 
         ax.set_xlabel("dist")
         ax.set_ylabel("pos-count")
@@ -553,14 +584,14 @@ def pos_plot():
 
 
 def check_dnn_all():
-    data =np.array([np.genfromtxt("data-test/cycle_test", delimiter='\n')])
+    data = np.array([np.genfromtxt("data-test/cycle_test", delimiter='\n')])
     print(data)
     print(data.shape)
     model = tf.keras.models.load_model('dnn-all-model')
 
     pp = model.predict(data)
-    for i  in range(0, 22, 2):
-        print(f'pp[{i}]: ({pp[0,i]*52.5}, {pp[0,i+1]*34})')
+    for i in range(0, 22, 2):
+        print(f'pp[{i}]: ({pp[0, i] * 52.5}, {pp[0, i + 1] * 34})')
 
 
-dnn_all_accuracy()
+accuracy_plot(n_data=300)
