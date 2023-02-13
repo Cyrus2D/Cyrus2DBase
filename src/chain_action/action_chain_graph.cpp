@@ -79,23 +79,24 @@ void OpponentPredictor::load_dnn(){
 
 std::vector<Vector2D*> *
 OpponentPredictor::predict(const WorldModel &wm) {
+    OpponentPredictor::load_dnn();
     std::cout << "C" << std::endl;
 
     std::vector<double> data;
     data.push_back(wm.ball().pos().x / 52.5);
-    data.push_back(wm.ball().pos().y / 34);
-    data.push_back(wm.ball().posCount());
+    data.push_back(wm.ball().pos().y / 34.);
+    data.push_back((double)(wm.ball().posCount())/ 30.);
 
     for (int i = 1; i <= 11; i++) {
         const AbstractPlayerObject *p = wm.ourPlayer(i);
         if (p == nullptr) {
             data.push_back(-105. / 52.5);
             data.push_back(-105. / 34);
-            data.push_back(30. / 30);
+            data.push_back(30. / 30.);
         } else {
             data.push_back(p->pos().x / 52.5);
             data.push_back(p->pos().y / 34.);
-            data.push_back(p->posCount() / 30);
+            data.push_back((double)(p->posCount()) / 30.);
         }
     }
     std::cout << "D" << std::endl;
@@ -106,11 +107,11 @@ OpponentPredictor::predict(const WorldModel &wm) {
         if (p == nullptr) {
             data.push_back(-105. / 52.5);
             data.push_back(-105. / 34);
-            data.push_back(30. / 30);
+            data.push_back(30. / 30.);
         } else {
             data.push_back(p->pos().x / 52.5);
             data.push_back(p->pos().y / 34.);
-            data.push_back(p->posCount() / 30);
+            data.push_back((double)(p->posCount()) / 30.);
         }
     }
     std::cout << "E" << std::endl;
@@ -121,14 +122,18 @@ OpponentPredictor::predict(const WorldModel &wm) {
     }
 
     std::cout << "F" << std::endl;
-
+    std::cout << input << std::endl;
 
     OpponentPredictor::model->Calculate(input);
     std::cout << "G" << std::endl;
 
 
     std::vector<Vector2D *> *opps_pos = new std::vector<Vector2D *>;
+    std::cout << OpponentPredictor::model->mOutput << std::endl;
     for (int i = 0; i < 22; i += 2) {
+        std::cout << "i(" << i << "): "
+                  << OpponentPredictor::model->mOutput(i) << ", "
+                  << OpponentPredictor::model->mOutput(i + 1) << std::endl;
         opps_pos->push_back(new Vector2D(OpponentPredictor::model->mOutput(i) * 52.5,
                                          OpponentPredictor::model->mOutput(i + 1) * 34.));
     }
