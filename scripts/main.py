@@ -21,6 +21,7 @@ model = [
 ]
 #
 for m in model:
+    print(m.get_name())
     m.fit(xy_train, headers)
     m.test(xy_test, headers)
 
@@ -41,6 +42,11 @@ model = [
     LSTM_Model([256, 128], ['elu', 'elu']),
 ]
 
+for m in model:
+    print(m.get_name())
+    m.fit(xy_train, headers)
+    m.test(xy_test, headers)
+
 del xy_test
 del xy_train
 
@@ -60,5 +66,6 @@ model = [
 ]
 
 for m in model:
+    print(m.get_name())
     m.fit(xy_train, headers)
     m.test(xy_test, headers)
