@@ -20,7 +20,7 @@ class Config:
         self.n_train_file = 200
         self.n_test_file = 100
 
-        self.res_dir = "res/"
+        self.res_dir = "res"
 
         self.episode_duration = 10
         self.n_process = 100
