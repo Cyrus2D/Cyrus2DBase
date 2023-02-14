@@ -122,7 +122,7 @@ class RNN_Model:
         np.savetxt(f"{self.get_name('edp-')}", all, delimiter=',')
 
     def get_name(self, prefix=''):
-        return f"{config.res_dir}/{prefix}rnn-{'-'.join(map(str, self.n_layers))}-{'-'.join(self.activations)}-{config.optimizer}-{config.loss}-{config.batch_size}"
+        return f"{config.res_dir}/{prefix}rnn-{'-'.join(map(str, self.n_layers))}-{'-'.join(self.activations)}-{config.optimizer}-{config.loss}-{config.batch_size}-{config.episode_duration}"
 
 
 class LSTM_Model:
@@ -183,4 +183,4 @@ class LSTM_Model:
         np.savetxt(f"{self.get_name('edp-')}", all, delimiter=',')
 
     def get_name(self, prefix=''):
-        return f"{config.res_dir}/{prefix}lstm-{'-'.join(map(str, self.n_layers))}-{'-'.join(self.activations)}-{config.optimizer}-{config.loss}-{config.batch_size}"
+        return f"{config.res_dir}/{prefix}lstm-{'-'.join(map(str, self.n_layers))}-{'-'.join(self.activations)}-{config.optimizer}-{config.loss}-{config.batch_size}-{config.episode_duration}"
