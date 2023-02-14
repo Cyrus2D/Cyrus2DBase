@@ -26,10 +26,10 @@ def run_multi_process(model, train, test, headers):
     for p in process:
         p.join()
 
-
-config.n_train_file = 5
-config.n_test_file = 5
-config.n_epochs = 1
+#
+# config.n_train_file = 5
+# config.n_test_file = 5
+# config.n_epochs = 1
 
 headers = create_headers()
 
@@ -43,8 +43,8 @@ model = [
     # DNN_Model([256, 128], ['elu', 'elu'])
 ]
 
-run_multi_process(model, xy_train, xy_test, headers)
-exit()
+# run_multi_process(model, xy_train, xy_test, headers)
+# exit()
 del xy_test
 del xy_train
 
