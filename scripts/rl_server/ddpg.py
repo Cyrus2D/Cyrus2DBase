@@ -160,7 +160,7 @@ class DeepAC:
     def clip_q(self, q):
         return tf.math.minimum(tf.maximum(q, self.min_q), self.max_q)
 
-    def create_model_actor_critic(self, actor_layers=None, critic_layers=None, actor_optimizer='adam', critic_optimizer='adam'):
+    def create_model_actor_critic(self, actor_layers=None, critic_layers=None, actor_optimizer='adam', critic_optimizer='adam', limit_actor=True, limit_critic=False):
         if critic_layers is None:
             critic_layers = [128, 64, 32]
         if actor_layers is None:
@@ -170,7 +170,8 @@ class DeepAC:
         for layer in actor_layers[1:]:
             actor = layers.Dense(layer, activation='relu')(actor)
         actor = layers.Dense(self.action_size, activation='linear')(actor)
-        actor = layers.Lambda(lambda a: self.clip_action(a))(actor)
+        if limit_actor:
+            actor = layers.Lambda(lambda a: self.clip_action(a))(actor)
         actor = keras.Model(input_obs, actor)
         actor.summary()
         self.actor = actor
@@ -182,7 +183,8 @@ class DeepAC:
         for layer in critic_layers[1:]:
             critic = layers.Dense(layer, activation='relu')(critic)
         critic = layers.Dense(1)(critic)
-        critic = layers.Lambda(lambda q: self.clip_q(q))(critic)
+        if limit_critic:
+            critic = layers.Lambda(lambda q: self.clip_q(q))(critic)
         critic = Model(inputs=[action_input, input_obs], outputs=critic)
         critic.summary()
         self.critic = critic
