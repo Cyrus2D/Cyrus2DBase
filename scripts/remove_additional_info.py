@@ -2,6 +2,8 @@ import multiprocessing
 import os
 import numpy as np
 
+from models.config import config
+
 
 def modify(file_name_index):
     print(f"#{file_name_index[1]}")
@@ -25,5 +27,5 @@ for file in files:
     i += 1
     all_files.append((f'data/{file}', i))
 
-# pool = multiprocessing.Pool(20)
-# pool.map(modify, all_files)
+pool = multiprocessing.Pool(config.n_process)
+pool.map(modify, all_files)
