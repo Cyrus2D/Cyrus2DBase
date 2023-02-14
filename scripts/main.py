@@ -37,10 +37,10 @@ xy_train = np.array(get_data(config.n_train_file))
 xy_test = np.array(get_data(m=config.n_test_file))
 
 model = [
-    DNN_Model([128, 64], ['relu', 'relu']),
-    DNN_Model([256, 128], ['relu', 'relu']),
-    DNN_Model([128, 64], ['elu', 'elu']),
-    DNN_Model([256, 128], ['elu', 'elu'])
+    # DNN_Model([128, 64], ['relu', 'relu']),
+    # DNN_Model([256, 128], ['relu', 'relu']),
+    # DNN_Model([128, 64], ['elu', 'elu']),
+    # DNN_Model([256, 128], ['elu', 'elu'])
 ]
 
 run_multi_process(model, xy_train, xy_test, headers)
@@ -52,14 +52,14 @@ xy_train = np.array(get_data_rnn(config.n_train_file))
 xy_test = np.array(get_data_rnn(m=config.n_test_file))
 
 model = [
-    RNN_Model([128, 64], ['relu', 'relu']),
-    RNN_Model([256, 128], ['relu', 'relu']),
-    RNN_Model([128, 64], ['elu', 'elu']),
-    RNN_Model([256, 128], ['elu', 'elu']),
-    LSTM_Model([128, 64], ['relu', 'relu']),
-    LSTM_Model([256, 128], ['relu', 'relu']),
-    LSTM_Model([128, 64], ['elu', 'elu']),
-    LSTM_Model([256, 128], ['elu', 'elu']),
+    # RNN_Model([128, 64], ['relu', 'relu']),
+    # RNN_Model([256, 128], ['relu', 'relu']),
+    # RNN_Model([128, 64], ['elu', 'elu']),
+    # RNN_Model([256, 128], ['elu', 'elu']),
+    # LSTM_Model([128, 64], ['relu', 'relu']),
+    # LSTM_Model([256, 128], ['relu', 'relu']),
+    # LSTM_Model([128, 64], ['elu', 'elu']),
+    # LSTM_Model([256, 128], ['elu', 'elu']),
 ]
 
 for m in model:
@@ -76,10 +76,10 @@ xy_test = np.array(get_data_rnn(m=config.n_test_file))
 
 model = [
     RNN_Model([128, 64], ['relu', 'relu']),
+    LSTM_Model([128, 64], ['relu', 'relu']),
     RNN_Model([256, 128], ['relu', 'relu']),
     RNN_Model([128, 64], ['elu', 'elu']),
     RNN_Model([256, 128], ['elu', 'elu']),
-    LSTM_Model([128, 64], ['relu', 'relu']),
     LSTM_Model([256, 128], ['relu', 'relu']),
     LSTM_Model([128, 64], ['elu', 'elu']),
     LSTM_Model([256, 128], ['elu', 'elu']),

@@ -26,7 +26,7 @@ err_range = [
     100,
 ]
 
-config.n_process = 20
+# config.n_process = 20
 
 
 def data_error():
