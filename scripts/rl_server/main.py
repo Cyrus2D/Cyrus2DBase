@@ -17,7 +17,7 @@ import threading
 #os.environ["CUDA_VISIBLE_DEVICES"]="1"
 #tf.config.experimental.set_visible_devices([], 'GPU')
 
-episode_number_max = 100 * 200
+episode_number_max = 1000 * 200
 obs_size = 12
 done = Manager().Value('i', 0)
 run_name = '1'
@@ -26,13 +26,13 @@ db_start = 1
 train_embedded = True
 get_model = False
 random_action_percentage = 0.1
-generate_random = True
+generate_random = False
 actor_layers = None
 critic_layers = None
 actor_optimizer = 'sgd'
 critic_optimizer = 'sgd'
 logger = get_logger()
-logger.setLevel(level=logging.DEBUG)
+logger.setLevel(level=logging.CRITICAL)
 
 
 def to_bool(val: str):
@@ -121,70 +121,76 @@ class PythonRLTrainer:
         self.episode_res = []
         self.latest_episode_rewards = []
         self.raw_data: dict[int, StepData] = dict()
+        self.raw_data_lock = Manager().Lock()
         self.cycle = -1
         self.out_path = os.path.join('res', run_name + '_' + start_time, str(db_number))
         os.makedirs(self.out_path, exist_ok=True)
         self.episode_number = Manager().Value('i', 0)
+        self.step_number = Manager().Value('i', 0)
         self.local_done = Manager().Value('i', 0)
         self.init_trainer()
 
     def add_trainer_info(self, pre_num_cycle, values):
-        cycle = int(pre_num_cycle.split('_')[-1])
-        is_done = int(values[0]) >= 2
-        is_start = int(values[0]) == 0
-        status = int(values[0])
-        if is_start:
-            return is_start, is_done, status, 0
-        reward_cycle = cycle - 1
-        if reward_cycle not in self.raw_data.keys():
-            self.raw_data[reward_cycle] = StepData()
-        self.raw_data[reward_cycle].done = is_done
-        self.raw_data[reward_cycle].reward = values[1]
-        if is_done:
-            self.raw_data[reward_cycle].next_state = None
-        return is_start, is_done, status, values[1]
+        with self.raw_data_lock:
+            cycle = int(pre_num_cycle.split('_')[-1])
+            is_done = int(values[0]) >= 2
+            is_start = int(values[0]) == 0
+            status = int(values[0])
+            if is_start:
+                return is_start, is_done, status, 0
+            reward_cycle = cycle - 1
+            if reward_cycle not in self.raw_data.keys():
+                self.raw_data[reward_cycle] = StepData()
+            self.raw_data[reward_cycle].done = is_done
+            self.raw_data[reward_cycle].reward = values[1]
+            if is_done:
+                self.raw_data[reward_cycle].next_state = None
+            return is_start, is_done, status, values[1]
 
     def add_player_info(self, pre_num_cycle, values):
-        cycle = int(pre_num_cycle.split('_')[-1])
-        if cycle not in self.raw_data.keys():
-            self.raw_data[cycle] = StepData()
-        self.raw_data[cycle].state = values
-        cycle -= 1
-        if cycle not in self.raw_data.keys():
-            self.raw_data[cycle] = StepData()
-        if self.raw_data[cycle].done is False:
-            self.raw_data[cycle].next_state = values
+        with self.raw_data_lock:
+            cycle = int(pre_num_cycle.split('_')[-1])
+            if cycle not in self.raw_data.keys():
+                self.raw_data[cycle] = StepData()
+            self.raw_data[cycle].state = values
+            cycle -= 1
+            if cycle not in self.raw_data.keys():
+                self.raw_data[cycle] = StepData()
+            if self.raw_data[cycle].done is False:
+                self.raw_data[cycle].next_state = values
 
     def add_player_action(self, pre_num_cycle, action):
-        cycle = int(pre_num_cycle.split('_')[-1])
-        if cycle not in self.raw_data.keys():
-            self.raw_data[cycle] = StepData()
-        self.raw_data[cycle].action = action
+        with self.raw_data_lock:
+            cycle = int(pre_num_cycle.split('_')[-1])
+            if cycle not in self.raw_data.keys():
+                self.raw_data[cycle] = StepData()
+            self.raw_data[cycle].action = action
 
     def add_data_to_buffer(self, current_cycle):
-        should_remove = []
-        for key in self.raw_data.keys():
-            if self.raw_data[key].next_state is None and self.raw_data[key].done is False:
-                if key < current_cycle - 20:
-                    should_remove.append(key)
-                continue
-            if self.raw_data[key].reward is None:
-                if key < current_cycle - 20:
-                    should_remove.append(key)
-                continue
-            if self.raw_data[key].state is None:
-                if key < current_cycle - 20:
-                    should_remove.append(key)
-                continue
-            if self.raw_data[key].action is None:
-                if key < current_cycle - 20:
-                    should_remove.append(key)
-                continue
-            self.shared_buffer.add(Transition(self.raw_data[key].state, self.raw_data[key].action, self.raw_data[key].reward, self.raw_data[key].next_state))
-            # self.rl.add_to_buffer(Transition(self.data[key].state, self.data[key].action, self.data[key].reward, self.data[key].next_state))
-            should_remove.append(key)
-        for key in should_remove:
-            del self.raw_data[key]
+        with self.raw_data_lock:
+            should_remove = []
+            for key in self.raw_data.keys():
+                if self.raw_data[key].next_state is None and self.raw_data[key].done is False:
+                    if key < current_cycle - 20:
+                        should_remove.append(key)
+                    continue
+                if self.raw_data[key].reward is None:
+                    if key < current_cycle - 20:
+                        should_remove.append(key)
+                    continue
+                if self.raw_data[key].state is None:
+                    if key < current_cycle - 20:
+                        should_remove.append(key)
+                    continue
+                if self.raw_data[key].action is None:
+                    if key < current_cycle - 20:
+                        should_remove.append(key)
+                    continue
+                self.shared_buffer.add(Transition(self.raw_data[key].state, self.raw_data[key].action, self.raw_data[key].reward, self.raw_data[key].next_state))
+                # self.rl.add_to_buffer(Transition(self.data[key].state, self.data[key].action, self.data[key].reward, self.data[key].next_state))
+                should_remove.append(key)
+            for key in should_remove:
+                del self.raw_data[key]
 
     def end_function(self):
         logger.critical('saving data')
@@ -246,6 +252,7 @@ class PythonRLTrainer:
             return False
         else:
             self.cycle = int(pre_num_cycle.split('_')[-1])
+            self.step_number.value += 1
             is_start, is_done, status, reward = self.add_trainer_info(pre_num_cycle, values)
             logger.info(f'cycle:{self.cycle} is_start:{is_start} is_done:{is_done} status:{status} reward:{reward}')
             if not is_start:
@@ -305,7 +312,7 @@ class PythonRLTrainer:
             if self.local_done.value == 1:
                 self.player_end_function()
                 break
-            if self.episode_number.value % 1000 == 0:
+            if self.step_number.value % 50000 == 0:
                 self.player_end_function()
             res = self.run_player_one_step()
             if res:
