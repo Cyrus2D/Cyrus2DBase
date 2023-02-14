@@ -169,7 +169,7 @@ class DeepAC:
         actor = layers.Dense(actor_layers[0], activation='relu')(input_obs)
         for layer in actor_layers[1:]:
             actor = layers.Dense(layer, activation='relu')(actor)
-        actor = layers.Dense(self.action_size, activation='sigmoid')(actor)
+        actor = layers.Dense(self.action_size, activation='linear')(actor)
         actor = layers.Lambda(lambda a: self.clip_action(a))(actor)
         actor = keras.Model(input_obs, actor)
         actor.summary()
