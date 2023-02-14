@@ -245,7 +245,7 @@ class PythonRLTrainer:
             self.rl.update_actor(received_actor)
 
     def run_trainer_one_step(self):
-        pre_num_cycle, values = self.rd.get_msg_from_no_cycle(num=0, msg_length=[2], wait_time_second=1, done=done)
+        pre_num_cycle, values = self.rd.get_msg_from_no_cycle(num=0, msg_length=[2], wait_time_second=2, done=done)
         logger.info(f'trainer received({self.cycle}): {pre_num_cycle}, {values}')
         if pre_num_cycle is None:
             logger.critical('Did not receive any message from trainer!')
