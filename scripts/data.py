@@ -215,7 +215,7 @@ def get_test_data():
         if file.split('.')[-1] != 'csv':
             continue
         csv_files.append(file)
-    pool = Pool(processes=20)
+    pool = Pool(processes=config.n_process)
     res = pool.map(read_file_test, csv_files)
     for r in res:
         for k, v in r[0].items():
@@ -241,7 +241,7 @@ def get_data(n=None, m=None):
             continue
         i += 1
         csv_files.append((file, i))
-    pool = Pool(processes=20)
+    pool = Pool(processes=config.n_process)
     res = pool.map(read_file, csv_files)
     for r in res:
         all_xy += list(r)
@@ -265,7 +265,7 @@ def get_data_rnn(n=None, m=None):
             continue
         i += 1
         csv_files.append((file, i))
-    pool = Pool(processes=20)
+    pool = Pool(processes=config.n_process)
     res = pool.map(read_file_rnn, csv_files)
     for r in res:
         all_xy += list(r)

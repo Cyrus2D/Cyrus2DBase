@@ -4,41 +4,59 @@ from models.models import DNN_Model, RNN_Model, LSTM_Model
 
 import numpy as np
 
-config.n_train_file = 50
-config.n_test_file = 50
-config.n_epochs = 1
+# config.n_train_file = 5
+# config.n_test_file = 5
+# config.n_epochs = 1
 
 headers = create_headers()
 
-# xy_train = np.array(get_data(config.n_train_file))
-# xy_test = np.array(get_data(m=config.n_test_file))
+xy_train = np.array(get_data(config.n_train_file))
+xy_test = np.array(get_data(m=config.n_test_file))
 
 model = [
-    # DNN_Model([128, 64], ['relu', 'relu']),
-    # DNN_Model([256, 128], ['relu', 'relu']),
-    # DNN_Model([128, 64], ['elu', 'elu']),
-    # DNN_Model([256, 128], ['elu', 'elu'])
+    DNN_Model([128, 64], ['relu', 'relu']),
+    DNN_Model([256, 128], ['relu', 'relu']),
+    DNN_Model([128, 64], ['elu', 'elu']),
+    DNN_Model([256, 128], ['elu', 'elu'])
 ]
 #
-# for m in model:
-#     m.fit(xy_train, headers)
-#     m.test(xy_test, headers)
+for m in model:
+    m.fit(xy_train, headers)
+    m.test(xy_test, headers)
 
-# del xy_test
-# del xy_train
+del xy_test
+del xy_train
 
 xy_train = np.array(get_data_rnn(config.n_train_file))
 xy_test = np.array(get_data_rnn(m=config.n_test_file))
 
 model = [
     RNN_Model([128, 64], ['relu', 'relu']),
-    # RNN_Model([256, 128], ['relu', 'relu']),
-    # RNN_Model([128, 64], ['elu', 'elu']),
-    # RNN_Model([256, 128], ['elu', 'elu']),
-    # LSTM_Model([128, 64], ['relu', 'relu']),
-    # LSTM_Model([256, 128], ['relu', 'relu']),
-    # LSTM_Model([128, 64], ['elu', 'elu']),
-    # LSTM_Model([256, 128], ['elu', 'elu']),
+    RNN_Model([256, 128], ['relu', 'relu']),
+    RNN_Model([128, 64], ['elu', 'elu']),
+    RNN_Model([256, 128], ['elu', 'elu']),
+    LSTM_Model([128, 64], ['relu', 'relu']),
+    LSTM_Model([256, 128], ['relu', 'relu']),
+    LSTM_Model([128, 64], ['elu', 'elu']),
+    LSTM_Model([256, 128], ['elu', 'elu']),
+]
+
+del xy_test
+del xy_train
+
+config.episode_duration = 20
+xy_train = np.array(get_data_rnn(config.n_train_file))
+xy_test = np.array(get_data_rnn(m=config.n_test_file))
+
+model = [
+    RNN_Model([128, 64], ['relu', 'relu']),
+    RNN_Model([256, 128], ['relu', 'relu']),
+    RNN_Model([128, 64], ['elu', 'elu']),
+    RNN_Model([256, 128], ['elu', 'elu']),
+    LSTM_Model([128, 64], ['relu', 'relu']),
+    LSTM_Model([256, 128], ['relu', 'relu']),
+    LSTM_Model([128, 64], ['elu', 'elu']),
+    LSTM_Model([256, 128], ['elu', 'elu']),
 ]
 
 for m in model:

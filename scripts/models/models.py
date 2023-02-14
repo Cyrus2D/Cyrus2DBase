@@ -102,16 +102,16 @@ class RNN_Model:
 
     def test(self, xy, headers):
         x_indexes, _ = create_x_y_indexes(headers)
-        x = np.array(xy[:, x_indexes])
-        normalize_data_all(x)
-        my_pos = (xy[:, headers["tm-9-full"]])[:, :-1]
+        x = np.array(xy[:, :, x_indexes])
+        normalize_data_rnn_all(x)
+        my_pos = (xy[:, -1, headers["tm-9-full"]])[:, :-1]
         opp_pos_noise = self.model.predict(x)[:, 8:10]
         opp_pos_noise[:, 0] *= config.max_x
         opp_pos_noise[:, 1] *= config.max_y
-        opp_pos_full = (xy[:, headers["opp-5-full"]])[:, :-1]
+        opp_pos_full = (xy[:, -1, headers["opp-5-full"]])[:, :-1]
 
         my_dist = dist(my_pos, opp_pos_full)
-        pos_count = (xy[:, headers["opp-5-noise"]])[:, -1]
+        pos_count = (xy[:, -1, headers["opp-5-noise"]])[:, -1]
         error = dist(opp_pos_noise, opp_pos_full)
 
         all = np.zeros((error.shape[0], 3))
@@ -163,16 +163,16 @@ class LSTM_Model:
 
     def test(self, xy, headers):
         x_indexes, _ = create_x_y_indexes(headers)
-        x = np.array(xy[:, x_indexes])
-        normalize_data_all(x)
-        my_pos = (xy[:, headers["tm-9-full"]])[:, :-1]
+        x = np.array(xy[:, :, x_indexes])
+        normalize_data_rnn_all(x)
+        my_pos = (xy[:, -1, headers["tm-9-full"]])[:, :-1]
         opp_pos_noise = self.model.predict(x)[:, 8:10]
         opp_pos_noise[:, 0] *= config.max_x
         opp_pos_noise[:, 1] *= config.max_y
-        opp_pos_full = (xy[:, headers["opp-5-full"]])[:, :-1]
+        opp_pos_full = (xy[:, -1, headers["opp-5-full"]])[:, :-1]
 
         my_dist = dist(my_pos, opp_pos_full)
-        pos_count = (xy[:, headers["opp-5-noise"]])[:, -1]
+        pos_count = (xy[:, -1, headers["opp-5-noise"]])[:, -1]
         error = dist(opp_pos_noise, opp_pos_full)
 
         all = np.zeros((error.shape[0], 3))
