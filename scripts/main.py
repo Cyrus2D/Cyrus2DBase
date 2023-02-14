@@ -1,12 +1,35 @@
+from multiprocessing import Process
+from multiprocessing.pool import Pool
+
 from data import get_data, create_headers, get_data_rnn
 from models.config import config
 from models.models import DNN_Model, RNN_Model, LSTM_Model
 
 import numpy as np
 
-# config.n_train_file = 5
-# config.n_test_file = 5
-# config.n_epochs = 1
+
+def combine_functions(f1, f2, f1_in, f2_in):
+    f1(*f1_in)
+    f2(*f2_in)
+
+
+def run_multi_process(model, train, test, headers):
+    train_functions = [m.fit for m in model]
+    test_functions = [m.test for m in model]
+
+    process = []
+    for train, test in zip(train_functions, test_functions):
+        p = Process(target=combine_functions, args=(train, test, (xy_train, headers), (xy_test, headers)))
+        p.start()
+        process.append(p)
+
+    for p in process:
+        p.join()
+
+
+config.n_train_file = 5
+config.n_test_file = 5
+config.n_epochs = 1
 
 headers = create_headers()
 
@@ -19,12 +42,9 @@ model = [
     DNN_Model([128, 64], ['elu', 'elu']),
     DNN_Model([256, 128], ['elu', 'elu'])
 ]
-#
-for m in model:
-    print(m.get_name())
-    m.fit(xy_train, headers)
-    m.test(xy_test, headers)
 
+run_multi_process(model, xy_train, xy_test, headers)
+exit()
 del xy_test
 del xy_train
 
