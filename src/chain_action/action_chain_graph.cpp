@@ -473,44 +473,15 @@ public:
 
 
 double ActionChainGraph::oppMinDist(const WorldModel &wm, Vector2D point){
-    std::cout << "A" << std::endl;
     double min = 100;
-
-    std::cout << "Cycle: " << wm.time().cycle() << std::endl;
-    std::vector<Vector2D*> * predicted_pos = OpponentPredictor().predict(wm);
-    for (int i = 0; i < 11; i++) {
-        std::cout <<"pp[" << i << "]: " << *(predicted_pos->at(i)) << std::endl;
-    }
-
     for(int i = 1; i<=11; i++){
         const AbstractPlayerObject * opp = wm.theirPlayer(i);
-        const Vector2D *pos;
-        std::cout << "I" << std::endl;
-
-        if (opp != nullptr and opp->goalie())
-            continue;
-        if (opp == nullptr) {
-            pos = (*predicted_pos)[i - 1];
-            dlog.addCircle(Logger::ACTION_CHAIN, *pos, 0.6, "#00FF00", true);
+        if(opp!=NULL && opp->unum()>0 && !opp->goalie()){
+            double dist = opp->pos().dist(point);
+            if(dist < min)
+                min = dist;
         }
-        else if(opp->posCount() >=0) {
-            pos = (*predicted_pos)[i-1];
-            dlog.addCircle(Logger::ACTION_CHAIN, *pos, 0.6, "#00FF00", true);
-            dlog.addCircle(Logger::ACTION_CHAIN, opp->pos(), 0.6, "#FF0000", true);
-
-        }
-        else{
-            pos = &(opp->pos());
-            dlog.addCircle(Logger::ACTION_CHAIN, *pos, 0.6, "#FF0000", true);
-        }
-        double dist = pos->dist(point);
-        if (dist < min)
-            min = dist;
-        std::cout << "J" << std::endl;
-
     }
-    std::cout << "B" << std::endl;
-
     return min;
 }
 #include "field_analyzer.h"
@@ -526,7 +497,7 @@ double ActionChainGraph::calcDangerEvalForTarget(const WorldModel &wm, Vector2D 
         else
             danger_eval[i] = danger_eval_base[i] / 4.0;
     }
-    double dist_opp_target = 0;
+    double dist_opp_target = oppMinDist(wm, target);
     if(dist_opp_target > 6)
         dist_opp_target = 6;
     double d = danger_eval[(int)dist_opp_target];;
