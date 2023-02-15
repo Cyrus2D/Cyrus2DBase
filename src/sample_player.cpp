@@ -913,6 +913,10 @@ void SamplePlayer::extract() {
         }
     }
 
+    fout << fullstateWorld().time().cycle() << ",";
+    fout << fullstateWorld().ball().pos().x << "," << fullstateWorld().ball().pos().y << "," << fullstateWorld().ball().posCount() << ",";
+    fout << fullstateWorld().ball().vel().x << "," << fullstateWorld().ball().vel().y << "," << fullstateWorld().ball().velCount() << ","
+         << "0,0,";
     for (int i = 1; i <= 11; i++) {
         const AbstractPlayerObject *opp = fullstateWorld().ourPlayer(i);
         if (opp == nullptr) {
