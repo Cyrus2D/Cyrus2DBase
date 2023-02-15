@@ -860,7 +860,7 @@ SamplePlayer::createActionGenerator() const
 void SamplePlayer::extract() {
     static bool first_time = true;
 
-    if (world().self().unum() != 9 and world().self().unum() != 3) {
+    if (world().self().unum() != 9 and world().self().unum() != 5) {
         return;
     }
     if (world().gameMode().type() != rcsc::GameMode::PlayOn) {
