@@ -269,7 +269,7 @@ def get_data_rnn(n=None, m=None):
     pool = Pool(processes=config.n_process)
     res = pool.map(read_file_rnn, csv_files)
     for r in res:
-        all_xy += [np.array(list(r))]
+        all_xy += list(r)
     print('Done!')
     return all_xy
 

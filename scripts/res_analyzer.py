@@ -45,8 +45,13 @@ file_list = os.listdir('res/')
 
 files = [
     f'res/{file}' for file in file_list if
-    (file.startswith('edp') and file.find('-elu') == -1 and file.find('dnn') != -1)
+    (file.startswith('edp') and file.find('-elu') == -1)
 ]
+
+# files = [
+#     f'res/{file}' for file in file_list if
+#     (file.startswith('edp') and file.find('-elu') == -1 and file.find('dnn') != -1)
+# ]
 
 # files = [
 #     f'res/{file}' for file in file_list if (file.startswith('edp')
@@ -189,7 +194,9 @@ def pos_count_dist_fig(all):
     plt.close()
 
 
-def compare_3d(edp1, edp2):
+def compare_3d(edp1, edp2, f1, f2):
+    f1 = f1.split('/')[-1]
+    f2 = f2.split('/')[-1]
     pos_count_dist_1 = [[0 for _ in range(int(30 + 1))] for _ in range(int(config.n_dist + 1))]
     counter_1 = [[0 for _ in range(int(30 + 1))] for _ in range(int(config.n_dist + 1))]
 
@@ -259,23 +266,28 @@ def compare_3d(edp1, edp2):
     ax.set_xlabel("pos-count")
     ax.set_ylabel("dist")
 
-    plt.show()
-
+    # plt.show()
+    plt.savefig(f"res/compare/E-{f1} - E-{f2}")
+    plt.close()
     # surf = ax.plot_surface(X, Y, Z, facecolors=c, antialiased=False)
 
     # pickle.dump(fig, open('figs/accuracy.pickle', 'wb'))
     # plt.show()
 
 
-files = [
-    'res/edp-lstm-256-128-elu-elu-adam-mse-64',
-    'res/edp-data'
-]
+# files = [
+#     'res/edp-lstm-256-128-elu-elu-adam-mse-64',
+#     'res/edp-data'
+# ]
 data = []
 for file in files:
+    print(file)
     edp = np.genfromtxt(file, delimiter=',')
     data.append(edp)
-compare_3d(data[0], data[1])
+for i in range(len(data)):
+    for j in range(i, len(data)):
+        print(i,j)
+        compare_3d(data[i], data[j], files[i], files[j])
 # all_pos_counts(files)
 # for i in range(20):
 #     print(i)

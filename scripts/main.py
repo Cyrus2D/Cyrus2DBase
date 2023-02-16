@@ -26,6 +26,7 @@ def run_multi_process(model, train, test, headers):
     for p in process:
         p.join()
 
+
 #
 # config.n_train_file = 5
 # config.n_test_file = 3
@@ -33,11 +34,6 @@ def run_multi_process(model, train, test, headers):
 # config.n_process = 20
 
 headers, _ = create_headers()
-config.episode_duration = 20
-xy_train = np.array(get_data_rnn(config.n_train_file))
-xy_test = np.array(get_data_rnn(m=config.n_test_file))
-print("GG")
-exit()
 
 xy_train = np.array(get_data(config.n_train_file))
 xy_test = np.array(get_data(m=config.n_test_file))
@@ -75,13 +71,14 @@ for m in model:
 del xy_test
 del xy_train
 
-config.episode_duration = 20
+config.episode_duration = 5
 xy_train = np.array(get_data_rnn(config.n_train_file))
 xy_test = np.array(get_data_rnn(m=config.n_test_file))
 
 model = [
     RNN_Model([512, 256], ['relu', 'relu']),
     LSTM_Model([256, 128], ['relu', 'relu']),
+    LSTM_Model([128, 64], ['relu', 'relu']),
     LSTM_Model([512, 256], ['relu', 'relu']),
 ]
 
@@ -93,13 +90,14 @@ for m in model:
 del xy_test
 del xy_train
 
-config.episode_duration = 5
+config.episode_duration = 20
 xy_train = np.array(get_data_rnn(config.n_train_file))
 xy_test = np.array(get_data_rnn(m=config.n_test_file))
 
 model = [
     RNN_Model([512, 256], ['relu', 'relu']),
     LSTM_Model([256, 128], ['relu', 'relu']),
+    LSTM_Model([128, 64], ['relu', 'relu']),
     LSTM_Model([512, 256], ['relu', 'relu']),
 ]
 
