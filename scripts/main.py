@@ -27,10 +27,10 @@ def run_multi_process(model, train, test, headers):
         p.join()
 
 #
-config.n_train_file = 5
-config.n_test_file = 5
-config.n_epochs = 1
-config.n_process = 20
+# config.n_train_file = 5
+# config.n_test_file = 3
+# config.n_epochs = 1
+# config.n_process = 20
 
 headers, _ = create_headers()
 
@@ -40,25 +40,9 @@ xy_test = np.array(get_data(m=config.n_test_file))
 model = [
     DNN_Model([128, 64], ['relu', 'relu']),
     DNN_Model([256, 128], ['relu', 'relu']),
-    DNN_Model([128, 64], ['elu', 'elu']),
-    DNN_Model([256, 128], ['elu', 'elu'])
-]
-
-del xy_test
-del xy_train
-
-xy_train = np.array(get_data_rnn(config.n_train_file))
-xy_test = np.array(get_data_rnn(m=config.n_test_file))
-
-model = [
-    RNN_Model([128, 64], ['relu', 'relu']),
-    RNN_Model([256, 128], ['relu', 'relu']),
-    RNN_Model([128, 64], ['elu', 'elu']),
-    RNN_Model([256, 128], ['elu', 'elu']),
-    LSTM_Model([128, 64], ['relu', 'relu']),
-    LSTM_Model([256, 128], ['relu', 'relu']),
-    LSTM_Model([128, 64], ['elu', 'elu']),
-    LSTM_Model([256, 128], ['elu', 'elu']),
+    DNN_Model([512, 256], ['relu', 'relu']),
+    # DNN_Model([128, 64], ['elu', 'elu']),
+    # DNN_Model([256, 128], ['elu', 'elu'])
 ]
 
 for m in model:
@@ -70,19 +54,49 @@ for m in model:
 del xy_test
 del xy_train
 
+xy_train = np.array(get_data_rnn(config.n_train_file))
+xy_test = np.array(get_data_rnn(m=config.n_test_file))
+
+model = [
+    RNN_Model([512, 256], ['relu', 'relu']),
+    LSTM_Model([256, 128], ['relu', 'relu']),
+    LSTM_Model([512, 256], ['relu', 'relu']),
+]
+
+for m in model:
+    print(m.get_name())
+    m.fit(xy_train, headers)
+    m.test(xy_test, headers)
+
+del xy_test
+del xy_train
+
 config.episode_duration = 20
 xy_train = np.array(get_data_rnn(config.n_train_file))
 xy_test = np.array(get_data_rnn(m=config.n_test_file))
 
 model = [
-    RNN_Model([128, 64], ['relu', 'relu']),
-    LSTM_Model([128, 64], ['relu', 'relu']),
-    RNN_Model([256, 128], ['relu', 'relu']),
-    RNN_Model([128, 64], ['elu', 'elu']),
-    RNN_Model([256, 128], ['elu', 'elu']),
+    RNN_Model([512, 256], ['relu', 'relu']),
     LSTM_Model([256, 128], ['relu', 'relu']),
-    LSTM_Model([128, 64], ['elu', 'elu']),
-    LSTM_Model([256, 128], ['elu', 'elu']),
+    LSTM_Model([512, 256], ['relu', 'relu']),
+]
+
+for m in model:
+    print(m.get_name())
+    m.fit(xy_train, headers)
+    m.test(xy_test, headers)
+
+del xy_test
+del xy_train
+
+config.episode_duration = 30
+xy_train = np.array(get_data_rnn(config.n_train_file))
+xy_test = np.array(get_data_rnn(m=config.n_test_file))
+
+model = [
+    RNN_Model([512, 256], ['relu', 'relu']),
+    LSTM_Model([256, 128], ['relu', 'relu']),
+    LSTM_Model([512, 256], ['relu', 'relu']),
 ]
 
 for m in model:

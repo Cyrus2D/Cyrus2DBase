@@ -360,13 +360,23 @@ def normalize_data(x, y=None):
 
 
 def normalize_data_all(x, y=None):
-    pos_x_i = [i for i in range(0, 69, 3)]
-    pos_y_i = [i for i in range(1, 69, 3)]
-    pos_count_i = [i for i in range(2, 69, 3)]
+    pos_x_i = [i for i in range(0, config.n_inputs, 8)]
+    pos_y_i = [i for i in range(1, config.n_inputs, 8)]
+    pos_count_i = [i for i in range(2, config.n_inputs, 8)]
+    vel_x_i = [i for i in range(3, config.n_inputs, 8)]
+    vel_y_i = [i for i in range(4, config.n_inputs, 8)]
+    vel_count_i = [i for i in range(5, config.n_inputs, 8)]
+    body_i = [i for i in range(6, config.n_inputs, 8)]
+    body_count_i = [i for i in range(7, config.n_inputs, 8)]
 
     x[:, pos_x_i] /= config.max_x
     x[:, pos_y_i] /= config.max_y
     x[:, pos_count_i] /= 30.
+    x[:, vel_x_i] /= 3
+    x[:, vel_y_i] /= 3
+    x[:, vel_count_i] /= 30
+    x[:, body_i] /= 180
+    x[:, body_count_i] /= 30
 
     pos_x_i = [i for i in range(0, 22, 2)]
     pos_y_i = [i for i in range(1, 22, 2)]
@@ -377,13 +387,23 @@ def normalize_data_all(x, y=None):
 
 
 def normalize_data_rnn_all(x, y=None):
-    pos_x_i = [i for i in range(0, 69, 3)]
-    pos_y_i = [i for i in range(1, 69, 3)]
-    pos_count_i = [i for i in range(2, 69, 3)]
+    pos_x_i = [i for i in range(0, config.n_inputs, 8)]
+    pos_y_i = [i for i in range(1, config.n_inputs, 8)]
+    pos_count_i = [i for i in range(2, config.n_inputs, 8)]
+    vel_x_i = [i for i in range(3, config.n_inputs, 8)]
+    vel_y_i = [i for i in range(4, config.n_inputs, 8)]
+    vel_count_i = [i for i in range(5, config.n_inputs, 8)]
+    body_i = [i for i in range(6, config.n_inputs, 8)]
+    body_count_i = [i for i in range(7, config.n_inputs, 8)]
 
     x[:, :, pos_x_i] /= config.max_x
     x[:, :, pos_y_i] /= config.max_y
     x[:, :, pos_count_i] /= 30.
+    x[:, :, vel_x_i] /= 3
+    x[:, :, vel_y_i] /= 3
+    x[:, :, vel_count_i] /= 30
+    x[:, :, body_i] /= 180
+    x[:, :, body_count_i] /= 30
 
     pos_x_i = [i for i in range(0, 22, 2)]
     pos_y_i = [i for i in range(1, 22, 2)]
