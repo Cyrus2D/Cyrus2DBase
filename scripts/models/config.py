@@ -6,7 +6,7 @@ class Config:
         self.max_x = 52.5
         self.max_y = 34.
 
-        self.n_dist = 100
+        self.n_dist = 20
 
         self.n_inputs = 8 + 11 * 2 * 8
         self.n_outputs = 11 * 2

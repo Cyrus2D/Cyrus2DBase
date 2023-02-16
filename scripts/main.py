@@ -33,6 +33,11 @@ def run_multi_process(model, train, test, headers):
 # config.n_process = 20
 
 headers, _ = create_headers()
+config.episode_duration = 20
+xy_train = np.array(get_data_rnn(config.n_train_file))
+xy_test = np.array(get_data_rnn(m=config.n_test_file))
+print("GG")
+exit()
 
 xy_train = np.array(get_data(config.n_train_file))
 xy_test = np.array(get_data(m=config.n_test_file))
@@ -49,7 +54,6 @@ for m in model:
     print(m.get_name())
     m.fit(xy_train, headers)
     m.test(xy_test, headers)
-    exit()
 
 del xy_test
 del xy_train
@@ -89,7 +93,7 @@ for m in model:
 del xy_test
 del xy_train
 
-config.episode_duration = 30
+config.episode_duration = 5
 xy_train = np.array(get_data_rnn(config.n_train_file))
 xy_test = np.array(get_data_rnn(m=config.n_test_file))
 
