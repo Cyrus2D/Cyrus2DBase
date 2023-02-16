@@ -8,7 +8,7 @@ class Config:
 
         self.n_dist = 100
 
-        self.n_inputs = 3 + 11 * 2 * 3
+        self.n_inputs = 8 + 11 * 2 * 8
         self.n_outputs = 11 * 2
 
         self.optimizer = 'adam'

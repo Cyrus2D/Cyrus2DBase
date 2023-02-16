@@ -4,6 +4,7 @@ import numpy as np
 import os
 from models.config import config
 
+
 def dist(x1, x2):
     return ((x1[:, 0] - x2[:, 0]) ** 2 + (x1[:, 1] - x2[:, 1]) ** 2) ** 0.5
 
@@ -276,16 +277,21 @@ def get_data_rnn(n=None, m=None):
 def create_headers():
     headers = {}
     headers['cycle'] = [0]
-    headers['ball'] = [1, 2, 3]
+    headers['ball'] = [1, 2, 3, 4, 5, 6, 7, 8]
 
     # 4 5 6, 7 8 9
     for i in range(1, 12):
-        headers[f'tm-{i}-noise'] = list(range(4 + (i - 1) * 3, 4 + i * 3))  # max=4+11*3 = 37
-        headers[f'opp-{i}-noise'] = list(range(37 + (i - 1) * 3, 37 + i * 3))  # max = 37+11*3 = 33+37 = 70
-        headers[f'tm-{i}-full'] = list(range(70 + (i - 1) * 3, 70 + i * 3))  # max=70 + 33 = 103
-        headers[f'opp-{i}-full'] = list(range(103 + (i - 1) * 3, 103 + i * 3))
+        headers[f'tm-{i}-noise'] = list(range(9 + (i - 1) * 8, 9 + i * 8))  # max=4+11*3 = 37
+        headers[f'opp-{i}-noise'] = list(range(97 + (i - 1) * 8, 97 + i * 8))  # max = 37+11*3 = 33+37 = 70
+        headers[f'tm-{i}-full'] = list(range(8 + 185 + (i - 1) * 8, 8 + 185 + i * 8))  # max=70 + 33 = 103
+        headers[f'opp-{i}-full'] = list(range(8 + 273 + (i - 1) * 8, 8 + 273 + i * 8))
 
-    return headers
+    sub_headers = {
+        'pos': [0, 1, 2],
+        'vel': [3, 4, 5],
+        'body': [6, 7]
+    }
+    return headers, sub_headers
 
 
 def create_x_y_indexes(headers: dict[str, list[int]]):
@@ -297,8 +303,6 @@ def create_x_y_indexes(headers: dict[str, list[int]]):
         if key.find('full') != -1:
             continue
         x_indexes += value
-        print(f"x {key}")
-    print(x_indexes)
 
     for key, value in headers.items():
         if key in ['cycle']:
@@ -309,9 +313,7 @@ def create_x_y_indexes(headers: dict[str, list[int]]):
             continue
         if key.find('tm') != -1:
             continue
-        y_indexes += value[:-1]
-        print(f"y {key}")
-    print(y_indexes)
+        y_indexes += value[:2]
 
     return x_indexes, y_indexes
 
