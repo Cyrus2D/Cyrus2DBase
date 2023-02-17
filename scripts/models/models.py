@@ -17,7 +17,7 @@ class DNN_Model:
         self.model = model
 
     def fit(self, x, y, headers):
-        history = self.model.fit(x, y, batch_size=config.batch_size, epochs=config.n_epochs)
+        history = self.model.fit(x, y, batch_size=config.batch_size, epochs=config.n_epochs, validation_split=0.1)
         self.model.save(f"{self.get_name('model-')}")
         return history
 
@@ -118,7 +118,7 @@ class LSTM_Model:
         self.model = model
 
     def fit(self, x, y, headers):
-        history = self.model.fit(x, y, batch_size=config.batch_size, epochs=config.n_epochs)
+        history = self.model.fit(x, y, batch_size=config.batch_size, epochs=config.n_epochs, validation_split=0.1)
         self.model.save(f"{self.get_name('model-')}")
         return history
 

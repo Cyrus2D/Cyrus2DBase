@@ -15,7 +15,7 @@ class Config:
         self.loss = 'mse'
 
         self.batch_size = 64
-        self.n_epochs = 10
+        self.n_epochs = 7
 
         self.n_train_file = 400
         self.n_test_file = 200
