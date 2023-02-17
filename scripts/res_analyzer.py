@@ -19,7 +19,7 @@ for i in range(20, 101, 10):
 def data_error():
     config.n_process = 20
     headers, _ = create_headers()
-    xy = np.array(get_data(m=100))
+    xy = np.array(get_data(m=200))
 
     my_pos = (xy[:, headers["tm-9-full"]])[:, :2]
     opp_pos_noise = (xy[:, headers["opp-5-noise"]])[:, :2]
@@ -45,7 +45,7 @@ file_list = os.listdir('res/')
 
 files = [
     f'res/{file}' for file in file_list if
-    (file.startswith('edp') and file.find('-elu') == -1)
+    (file.startswith('edp') and file != 'edp-data')
 ]
 
 # files = [
@@ -194,7 +194,11 @@ def pos_count_dist_fig(all):
     plt.close()
 
 
-def compare_3d(edp1, edp2, f1, f2):
+def compare_3d(all):
+    edp1 = all[0]
+    edp2 = all[1]
+    f1 = all[2]
+    f2 = all[3]
     f1 = f1.split('/')[-1]
     f2 = f2.split('/')[-1]
     pos_count_dist_1 = [[0 for _ in range(int(30 + 1))] for _ in range(int(config.n_dist + 1))]
@@ -284,10 +288,13 @@ for file in files:
     print(file)
     edp = np.genfromtxt(file, delimiter=',')
     data.append(edp)
+
+inp = []
 for i in range(len(data)):
     for j in range(i, len(data)):
-        print(i,j)
-        compare_3d(data[i], data[j], files[i], files[j])
+        print(i, j)
+        inp.append((data[i], data[j], files[i], files[j]))
+
 # all_pos_counts(files)
 # for i in range(20):
 #     print(i)
@@ -298,5 +305,5 @@ for i in range(len(data)):
 #     for j in range(0, 20):
 #         inp.append((data, j, j + 1, i))
 #
-# pool = Pool(20)
-# pool.map(pos_count_dist_fig, inp)
+pool = Pool(20)
+pool.map(compare_3d, inp)

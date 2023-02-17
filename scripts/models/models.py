@@ -16,33 +16,12 @@ class DNN_Model:
         model.compile(optimizer=config.optimizer, loss=config.loss)
         self.model = model
 
-    def fit(self, xy, headers):
-        x_indexes, y_indexes = create_x_y_indexes(headers)
-
-        x = xy[:, x_indexes]
-        y = xy[:, y_indexes]
-
-        print(x.shape)
-        print(y.shape)
-
-        print('normalizing')
-        normalize_data_all(x, y)
-
-        r_indexes = np.arange(x.shape[0])
-        np.random.shuffle(r_indexes)
-
-        print('shuffling')
-        x = x[r_indexes]
-        y = y[r_indexes]
-
+    def fit(self, x, y, headers):
         history = self.model.fit(x, y, batch_size=config.batch_size, epochs=config.n_epochs)
         self.model.save(f"{self.get_name('model-')}")
         return history
 
-    def test(self, xy, headers):
-        x_indexes, _ = create_x_y_indexes(headers)
-        x = np.array(xy[:, x_indexes])
-        normalize_data_all(x)
+    def test(self, xy, x, headers):
         my_pos = (xy[:, headers["tm-9-full"]])[:, :-1]
         opp_pos_noise = self.model.predict(x)[:, 8:10]
         opp_pos_noise[:, 0] *= config.max_x
@@ -138,33 +117,12 @@ class LSTM_Model:
         model.compile(optimizer=config.optimizer, loss=config.loss)
         self.model = model
 
-    def fit(self, xy, headers):
-        x_indexes, y_indexes = create_x_y_indexes(headers)
-
-        x = xy[:, :, x_indexes]
-        y = xy[:, -1, y_indexes]
-
-        print(x.shape)
-        print(y.shape)
-
-        print('normalizing')
-        normalize_data_rnn_all(x, y)
-
-        r_indexes = np.arange(x.shape[0])
-        np.random.shuffle(r_indexes)
-
-        print('shuffling')
-        x = x[r_indexes]
-        y = y[r_indexes]
-
+    def fit(self, x, y, headers):
         history = self.model.fit(x, y, batch_size=config.batch_size, epochs=config.n_epochs)
         self.model.save(f"{self.get_name('model-')}")
         return history
 
-    def test(self, xy, headers):
-        x_indexes, _ = create_x_y_indexes(headers)
-        x = np.array(xy[:, :, x_indexes])
-        normalize_data_rnn_all(x)
+    def test(self, xy, x, headers):
         my_pos = (xy[:, -1, headers["tm-9-full"]])[:, :-1]
         opp_pos_noise = self.model.predict(x)[:, 8:10]
         opp_pos_noise[:, 0] *= config.max_x
