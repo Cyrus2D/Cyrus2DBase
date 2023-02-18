@@ -291,7 +291,7 @@ for file in files:
 
 inp = []
 for i in range(len(data)):
-    for j in range(i, len(data)):
+    for j in range(len(data)):
         print(i, j)
         inp.append((data[i], data[j], files[i], files[j]))
 

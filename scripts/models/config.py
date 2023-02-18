@@ -17,8 +17,8 @@ class Config:
         self.batch_size = 64
         self.n_epochs = 7
 
-        self.n_train_file = 400
-        self.n_test_file = 200
+        self.n_train_file = 300
+        self.n_test_file = 100
 
         self.res_dir = "res"
 
