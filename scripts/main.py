@@ -29,10 +29,10 @@ def run_multi_process(model, train, test, headers):
 
 
 #
-config.n_train_file = 5
-config.n_test_file = 3
-config.n_epochs = 1
-config.n_process = 20
+# config.n_train_file = 5
+# config.n_test_file = 3
+# config.n_epochs = 1
+# config.n_process = 20
 
 headers, _ = create_headers()
 
