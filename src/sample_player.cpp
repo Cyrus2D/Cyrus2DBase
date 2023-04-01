@@ -164,6 +164,7 @@ SamplePlayer::~SamplePlayer()
 bool
 SamplePlayer::initImpl( CmdLineParser & cmd_parser )
 {
+    SamplePlayer::player_port = this->config().port();
     bool result = PlayerAgent::initImpl( cmd_parser );
 
     // read additional options
@@ -229,7 +230,67 @@ SamplePlayer::actionImpl()
                   << this->audioSensor().trainerMessage() << ']'
                   << std::endl;
     }
+    static bool first = true;
+    static std::ofstream *fout = nullptr;
+    if (!first && fout){
+        *fout << "O," << world().time().cycle() << ',' << world().time().stopped() << ','
+                << world().ball().pos().x << ','
+                << world().ball().pos().y << ','
+                << world().ball().vel().x << ','
+                << world().ball().vel().y << ','
+                << world().self().pos().x << ','
+                << world().self().pos().y << ','
+                << world().self().body() << ','
+                << world().self().vel().x << ','
+                << world().self().vel().y << ',';
 
+        for (int i = 1; i <= 11; i++){
+            const AbstractPlayerObject* p = world().ourPlayer(i);
+            if (p == nullptr || p->unum() < 0 || p->unum() == world().self().unum()) continue;
+
+            Vector2D rpos = world().self().pos() - p->pos();
+            *fout << p->unum() << ','
+                  << rpos.x << ','
+                  << rpos.y << ','
+                  << p->body() << ','
+                  << p->vel().x << ','
+                  << p->vel().y << ',';
+        }
+        for (int i = 1; i <= 11; i++){
+            const AbstractPlayerObject* p = world().theirPlayer(i);
+            if (p == nullptr || p->unum() < 0) continue;
+
+            Vector2D rpos = world().self().pos() - p->pos();
+            *fout << p->unum() << ','
+                  << rpos.x << ','
+                  << rpos.y << ','
+                  << p->body() << ','
+                  << p->vel().x << ','
+                  << p->vel().y << ',';
+        }
+        *fout << std::endl;
+    }
+
+    if (first) {
+        time_t rawtime;
+        struct tm *timeinfo;
+        char buffer[80];
+
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+
+        std::string dir = "/home/aref/data/";
+        strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H-%M-%S", timeinfo);
+        std::string str(buffer);
+        std::string rand_name = std::to_string(SamplePlayer::player_port);
+        str += "_" + std::to_string(world().self().unum()) + "_E" + rand_name + ".csv";
+        std::cout << "***********************************************" << std::endl;
+        std::cout << dir + str << std::endl;
+        fout = new std::ofstream((dir + str).c_str());
+
+        this->visualSensorInitFile(fout);
+        first = false;
+    }
 
     //
     // update strategy and analyzer
