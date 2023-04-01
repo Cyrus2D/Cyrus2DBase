@@ -3,6 +3,8 @@ from multiprocessing.pool import Pool
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib.colors import ListedColormap
 
 from data import create_headers, get_data, dist
 from models.config import config
@@ -194,6 +196,35 @@ def pos_count_dist_fig(all):
     plt.close()
 
 
+def get_cmp(f1, f2):
+    dic = {
+        'r': [255, 0, 0],
+        'g': [10, 145, 0],
+        'b': [0, 0, 255],
+        'y': [255, 0, 255]
+    }
+
+    N = 128
+    vals1 = np.ones((N, 4))
+    vals1[:, 0] = np.linspace(dic[f1][0] / 256, 1, N)
+    vals1[:, 1] = np.linspace(dic[f1][1] / 256, 1, N)
+    vals1[:, 2] = np.linspace(dic[f1][2] / 256, 1, N)
+
+    vals2 = np.ones((N, 4))
+    vals2[:, 0] = np.linspace(dic[f2][0] / 256, 1, N)
+    vals2[:, 1] = np.linspace(dic[f2][1] / 256, 1, N)
+    vals2[:, 2] = np.linspace(dic[f2][2] / 256, 1, N)
+
+    vals = np.zeros((256, 4))
+    vals[:128, :] = vals1
+    vals[128:, :] = vals2[::-1, :]
+    vals = vals[::-1, :]
+
+    newcmp = ListedColormap(vals)
+
+    return newcmp
+
+
 def compare_3d(all):
     edp1 = all[0]
     edp2 = all[1]
@@ -251,6 +282,9 @@ def compare_3d(all):
     X, Y = np.meshgrid(X, Y)
     Z = (pos_count_dist_2 - pos_count_dist_1)[:, :-5]
 
+    min_z = np.nanmin(Z)
+    max_z = np.nanmax(Z)
+    v = max(max_z, abs(min_z))
     # Z = np.clip(Z, -1, 1)
     # c = []
     # for r in Z:
@@ -260,11 +294,37 @@ def compare_3d(all):
     #     c.append(cc)
 
     fig, ax = plt.subplots()
+    # print(Z)
+    # print(max_z)
+    # print(min_z)
+    # print(v)
     # im = ax.imshow(Z, cmap='bwr')
+
+    first_color = ''
+    second_color = ''
+    if f1.find('lstm') >= 0:
+        first_color = 'r'
+    elif f1.find('dnn') >= 0:
+        first_color = 'g'
+    else:
+        first_color = 'b'
+
+    if f2.find('lstm') >= 0:
+        second_color = 'r'
+    elif f2.find('dnn') >= 0:
+        second_color = 'g'
+    else:
+        second_color = 'b'
+
+    if first_color == second_color:
+        second_color = 'y'
+
+    cmap = get_cmp(first_color, second_color)
+
     ZB = np.where((counter_1 < 100) * (counter_2 < 100), 1, 0)
     im = ax.imshow(ZB, cmap='Greys', vmin=0, vmax=+1)
     # im = ax.imshow(Z, cmap='bwr'), vmin=-5, vmax=+5)
-    im = ax.imshow(Z, cmap='bwr', vmin=-5, vmax=+5)
+    im = ax.imshow(Z, cmap=cmap, vmin=-v, vmax=+v)
     ax.figure.colorbar(im, ax=ax, shrink=0.5)
     fig.tight_layout()
     ax.set_xlabel("pos-count")
@@ -288,7 +348,6 @@ for file in files:
     print(file)
     edp = np.genfromtxt(file, delimiter=',')
     data.append(edp)
-
 inp = []
 for i in range(len(data)):
     for j in range(len(data)):
@@ -306,4 +365,5 @@ for i in range(len(data)):
 #         inp.append((data, j, j + 1, i))
 #
 pool = Pool(20)
+# comapare_all(data, files)
 pool.map(compare_3d, inp)

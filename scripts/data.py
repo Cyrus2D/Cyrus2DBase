@@ -243,7 +243,7 @@ def get_data(n=None, m=None):
         i += 1
         csv_files.append((file, i))
     pool = Pool(processes=config.n_process)
-    res = pool.map(read_file, csv_files)
+    res = pool.map(read_file, p)
     for r in res:
         all_xy += list(r)
     print('Done!')
