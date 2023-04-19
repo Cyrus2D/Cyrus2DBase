@@ -17,13 +17,13 @@ class Config:
         self.batch_size = 64
         self.n_epochs = 7
 
-        self.n_train_file = 300
-        self.n_test_file = 100
+        self.n_train_file = 10
+        self.n_test_file = 10
 
         self.res_dir = "res"
 
         self.episode_duration = 10
-        self.n_process = 100
+        self.n_process = 5
 
 
 config = Config()

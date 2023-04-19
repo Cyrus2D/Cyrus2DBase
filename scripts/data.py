@@ -185,14 +185,12 @@ def create_episodes_rnn_test(data):
 
 
 def read_file(file_name_index):
-    print(f'#{file_name_index[1]}')
     file_name = file_name_index[0]
     xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[:, :]
     return xy
 
 
 def read_file_rnn(file_name_index):
-    print(f'#{file_name_index[1]}')
     file_name = file_name_index[0]
     xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[:, :]
     return create_episodes_rnn(xy)
