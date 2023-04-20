@@ -1,6 +1,6 @@
 import tensorflow as tf
 from models.config import config
-from data import create_headers, create_x_y_indexes, normalize_data, normalize_data_all, dist, normalize_data_rnn_all
+from data import create_headers, create_x_y_indexes, normalize_data_all, dist, normalize_data_rnn_all
 import numpy as np
 
 
