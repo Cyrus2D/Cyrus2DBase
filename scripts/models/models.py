@@ -105,12 +105,12 @@ class RNN_Model:
 
 
 class LSTM_Model:
-    def __init__(self, n_layers=[128, 64], activation=['relu', 'relu']):
+    def __init__(self, n_layers=[128, 64], activation=['relu', 'relu'], episode_duration=5):
         self.n_layers = n_layers
         self.activations = activation
         model = tf.keras.Sequential()
         model.add(tf.keras.layers.LSTM(n_layers[0], activation=activation[0],
-                                       input_shape=(config.episode_duration, config.n_inputs)))
+                                       input_shape=(episode_duration, config.n_inputs)))
         for l, a in zip(n_layers[1:], activation[1:]):
             model.add(tf.keras.layers.Dense(l, activation=a))
         model.add(tf.keras.layers.Dense(config.n_outputs, activation='linear'))

@@ -15,10 +15,10 @@ class Config:
         self.loss = 'mse'
 
         self.batch_size = 64
-        self.n_epochs = 10
+        self.n_epochs = 1
 
-        self.n_train_file = 10
-        self.n_test_file = 10
+        self.n_train_file = 1
+        self.n_test_file = 1
 
         self.res_dir = "res"
 
