@@ -220,15 +220,17 @@ def normalize_data_all(x, y=None):
 # inputs are x and y (inpuys and outputs of the model)
 # y can be None because for testing models we dont need to normalize y
 def normalize_data_rnn_all(x, y=None):
-    pos_x_i = [i for i in range(0, config.n_inputs, 8)]
-    pos_y_i = [i for i in range(1, config.n_inputs, 8)]
-    pos_count_i = [i for i in range(2, config.n_inputs, 8)]
-    vel_x_i = [i for i in range(3, config.n_inputs, 8)]
-    vel_y_i = [i for i in range(4, config.n_inputs, 8)]
-    vel_count_i = [i for i in range(5, config.n_inputs, 8)]
-    body_i = [i for i in range(6, config.n_inputs, 8)]
-    body_count_i = [i for i in range(7, config.n_inputs, 8)]
+    # Get the indexs of different features with same domain range.
+    pos_x_i = [i for i in range(0, config.n_inputs, 8)] # x of positoins
+    pos_y_i = [i for i in range(1, config.n_inputs, 8)] # y of positions
+    pos_count_i = [i for i in range(2, config.n_inputs, 8)] # poscounts
+    vel_x_i = [i for i in range(3, config.n_inputs, 8)] # x of velocity
+    vel_y_i = [i for i in range(4, config.n_inputs, 8)] # y of velocity
+    vel_count_i = [i for i in range(5, config.n_inputs, 8)] # vel count
+    body_i = [i for i in range(6, config.n_inputs, 8)]      # body angle
+    body_count_i = [i for i in range(7, config.n_inputs, 8)]  # body count
 
+    # normalize the data based on their MAX and Min.
     x[:, :, pos_x_i] /= config.max_x
     x[:, :, pos_y_i] /= config.max_y
     x[:, :, pos_count_i] /= 30.
@@ -238,9 +240,11 @@ def normalize_data_rnn_all(x, y=None):
     x[:, :, body_i] /= 180
     x[:, :, body_count_i] /= 30
 
+    # make indexes for y 
     pos_x_i = [i for i in range(0, 22, 2)]
     pos_y_i = [i for i in range(1, 22, 2)]
 
+    # normalize the output data if y is not none 
     if y is not None:
         y[:, pos_x_i] /= config.max_x
         y[:, pos_y_i] /= config.max_y
