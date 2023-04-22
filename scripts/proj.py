@@ -1,25 +1,17 @@
 import os
 from multiprocessing import Pool
-
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
-
 from data import create_headers, create_x_y_indexes, get_data, get_data_rnn, normalize_data_all, normalize_data_rnn_all
 from models.models import DNN_Model, LSTM_Model
 from models.config import config
 from matplotlib import cm
-
 import numpy as np
 
-err_range = []
-for i in range(0, 200):
-    err_range.append(i / 10)
-# for i in range(5, 10):
-#     err_range.append(i)
-for i in range(20, 101, 10):
-    err_range.append(i)
 
-
+# make different DNN and LSTM models
+# make data based on the model and the episode duration for LSTM models
+# after training each model it test them and save the test reuslts in the csv files
 def train_and_test_models():
     headers, _ = create_headers() # get dictionary of headers and their indexs
 
@@ -109,8 +101,9 @@ def dist(x1, x2):
     return ((x1[:, 0] - x2[:, 0]) ** 2 + (x1[:, 1] - x2[:, 1]) ** 2) ** 0.5
 
 
+# make last_seen error and save them to the file
 def make_last_seen_error():
-    # config.n_process = 20
+
     headers, _ = create_headers()
     # read test files
     xy = np.array(get_data(m=config.n_test_file))
@@ -160,6 +153,7 @@ def get_cmp(f1, f2):
     return newcmp
 
 
+# Analyze two test results and comaper them in a single heatmap
 def compare_heat_map(args):
     print("Comapring Heatmap Figs: ", args[2], args[3])
     edp1 = args[0] # errors of model 1
@@ -228,21 +222,9 @@ def compare_heat_map(args):
     min_z = np.nanmin(Z)
     max_z = np.nanmax(Z)
     v = max(max_z, abs(min_z))
-    # Z = np.clip(Z, -1, 1)
-    # c = []
-    # for r in Z:
-    #     cc = []
-    #     for s in r:
-    #         cc.append('r' if s > 0 else 'b')
-    #     c.append(cc)
 
     fig, ax = plt.subplots()
-    # print(Z)
-    # print(max_z)
-    # print(min_z)
-    # print(v)
-    # im = ax.imshow(Z, cmap='bwr')
-
+  
     # add color to the fig, 
     # LSTM is Red
     # DNN is Green
@@ -272,22 +254,17 @@ def compare_heat_map(args):
     # create black background to cover cells that has insufficeint data
     ZB = np.where((counter_1 < 100) * (counter_2 < 100), 1, 0)
     im = ax.imshow(ZB, cmap='Greys', vmin=0, vmax=+1)
-    # im = ax.imshow(Z, cmap='bwr'), vmin=-5, vmax=+5)
     im = ax.imshow(Z, cmap=cmap, vmin=-v, vmax=+v)
     ax.figure.colorbar(im, ax=ax, shrink=0.5)
     fig.tight_layout()
     ax.set_xlabel("pos-count")
     ax.set_ylabel("dist")
 
-    # plt.show()
     plt.savefig(f"res/compare/E-{f1}-vs-E-{f2}") # saving heatmap figur
     plt.close()
-    # surf = ax.plot_surface(X, Y, Z, facecolors=c, antialiased=False)
-
-    # pickle.dump(fig, open('figs/accuracy.pickle', 'wb'))
-    # plt.show()
 
 
+# Analyze saved test files of each model and comaper 2 by 2 and plot the heatmap
 def make_heat_maps():
     file_list = os.listdir('res/')
     files = [ # make a list of test errors files
@@ -308,7 +285,15 @@ def make_heat_maps():
             compare_heat_map((data[i], data[j], files[i], files[j]))
 
 
+# find same poscount tests and comaper them in a 2d-plot
 def pos_count_fig(data, files, pos_count):
+    # make distance-error ranges to compare the errors
+    err_range = []
+    for i in range(0, 200):
+        err_range.append(i / 10)
+
+    for i in range(20, 101, 10):
+        err_range.append(i)
     fig, ax = plt.subplots(1, 1)
     
     # looping through different test errors of each model
@@ -325,13 +310,11 @@ def pos_count_fig(data, files, pos_count):
                               * (edp[:, 2] == pos_count))        # the test case poscount be equal to the specified test case
             
             counter.append(np.sum(np.where(condition, 1, 0)))    # sum the number of test cases with the condition
-            # counter.append(np.sum(np.where(condition, 1, 0))
-            #                + (np.sum(counter[-1] if i != 0 else 0)))
+ 
         # add a dummy 0
         counter.append(0)
         counter = np.array(counter) # arraying
-        # print(counter / counter[-1])
-        
+      
         # coloring
         if file.find('lstm') != -1:
             color = 'red'
@@ -352,179 +335,36 @@ def pos_count_fig(data, files, pos_count):
     plt.close()
 
 
-def draw_2d_based_on_poscount():
+# Analyze saved test files of each model and plot 2d plots for different poscounts based on distance and the prediction distance error
+def draw_2d_based_on_poscount(compare_all=True):
     file_list = os.listdir('res/')
-    # files = [
-    #     f'res/{file}' for file in file_list if
-    #     (file.startswith('edp') and file != 'edp-data')
-    # ]
-
-    files = [ # making file list of best models and data(last-seen) 
-        'res/edp-data', 
-        'res/edp-dnn-512-256-128-64-32-relu-relu-adam-mse-64',
-        'res/edp-lstm-512-256-relu-relu-adam-mse-64-5'
-    ]
+    
+    if compare_all:
+        files = [
+            f'res/{file}' for file in file_list if
+            (file.startswith('edp'))
+        ]
+    else:
+        files = [
+            
+        ]
+    
     data = []
     # Reading data of files
     for file in files:
-        print(file)
         edp = np.genfromtxt(file, delimiter=',')
         data.append(edp)
 
+    print("Creating 2D-plots with different poscounts")
     # Creating 2D comparison(error, dist) with different poscounts
     for i in range(20):
+        print(f'poscount={i}')
         pos_count_fig(data, files, i)
 
-
-def compare3d(args):
-    print("3D Compare Fig: ", args[2], args[3])
-    edp1 = args[0] # get test error of model 1
-    edp2 = args[1] # get test error of model 2
-    f1 = args[2] # model 1 name
-    f2 = args[3] # model 2 name
-    f1 = f1.split('/')[-1]
-    f2 = f2.split('/')[-1]
-    
-    # creating zero matrix for summing up the error based on distance and poscount
-    pos_count_dist_1 = [[0 for _ in range(int(30 + 1))] for _ in range(int(config.n_dist + 1))]
-    # creating zero matrix for counting the number of each cell for averaging
-    counter_1 = [[0 for _ in range(int(30 + 1))] for _ in range(int(config.n_dist + 1))]
-
-    max_dist = max(np.max(edp1[:, 1]), np.max(edp2[:, 1]))# finding max dist of errors
-
-    # filling the pos_count_dist_1 for model 1
-    for i in range(edp1.shape[0]):
-        pc = int(edp1[i][2]) # find poscount index in the matrix
-        d = int((edp1[i][1] / max_dist) * config.n_dist) # finding distance index in the matrix
-        e = edp1[i][0] # get the error of the model in the test case
-        # e = edp1[i][0] / edp1[i][1]
-
-        pos_count_dist_1[d][pc] += e # adding the error to matrix
-        counter_1[d][pc] += 1 # increasing the counter
-    pos_count_dist_1 = np.array(pos_count_dist_1) # arraying
-    counter_1 = np.array(counter_1) # arraying
-
-    # replacing zero with one in counter matrix to prohibit the dividing by 0
-    for i in range(counter_1.shape[0]):
-        for j in range(counter_1.shape[1]):
-            counter_1[i][j] = 1 if counter_1[i][j] == 0 else counter_1[i][j]
-
-    # doing the same procedure for model 2
-    pos_count_dist_2 = [[0 for _ in range(int(30 + 1))] for _ in range(int(config.n_dist + 1))]
-    counter_2 = [[0 for _ in range(int(30 + 1))] for _ in range(int(config.n_dist + 1))]
-
-    for i in range(edp2.shape[0]):
-        pc = int(edp2[i][2])
-        d = int((edp2[i][1] / max_dist) * config.n_dist)
-        e = edp2[i][0]
-        # e = edp2[i][0] / edp2[i][1]
-
-        pos_count_dist_2[d][pc] += e
-        counter_2[d][pc] += 1
-    pos_count_dist_2 = np.array(pos_count_dist_2)
-    counter_2 = np.array(counter_2)
-
-    for i in range(counter_2.shape[0]):
-        for j in range(counter_2.shape[1]):
-            counter_2[i][j] = 1 if counter_2[i][j] == 0 else counter_2[i][j]
-
-    # removing data where there is not enough data to comaper (3 is threshhold)
-    pos_count_dist_2 = np.where((counter_1 < 3) * (counter_2 < 3), np.nan, pos_count_dist_2)
-    pos_count_dist_1 = np.where((counter_1 < 3) * (counter_2 < 3), np.nan, pos_count_dist_1)
-
-    # averaging
-    pos_count_dist_1 /= counter_1
-    pos_count_dist_2 /= counter_2
-
-    # making X and Y and Z values to create the heat map
-    Y = np.arange(0, max_dist, max_dist / (config.n_dist + 1))
-    X = np.arange(0, 30 + 1, 1.)[:-5]
-    X, Y = np.meshgrid(X, Y)
-    Z = (pos_count_dist_2 - pos_count_dist_1)[:, :-5]
-
-    min_z = np.nanmin(Z)
-    max_z = np.nanmax(Z)
-    v = max(max_z, abs(min_z))
-    # Z = np.clip(Z, -1, 1)
-    # c = []
-    # for r in Z:
-    #     cc = []
-    #     for s in r:
-    #         cc.append('r' if s > 0 else 'b')
-    #     c.append(cc)
-
-    ax = plt.gca(projection='3d')
-    # print(Z)
-    # print(max_z)
-    # print(min_z)
-    # print(v)
-    # im = ax.imshow(Z, cmap='bwr')
-
-    # first_color = ''
-    # second_color = ''
-    # if f1.find('lstm') >= 0:
-    #     first_color = 'r'
-    # elif f1.find('dnn') >= 0:
-    #     first_color = 'g'
-    # else:
-    #     first_color = 'b'
-    #
-    # if f2.find('lstm') >= 0:
-    #     second_color = 'r'
-    # elif f2.find('dnn') >= 0:
-    #     second_color = 'g'
-    # else:
-    #     second_color = 'b'
-    #
-    # if first_color == second_color:
-    #     second_color = 'y'
-    #
-    # cmap = get_cmp(first_color, second_color)
-
-    # ZB = np.where((counter_1 < 100) * (counter_2 < 100), 1, 0)
-    # im = ax.imshow(ZB, cmap='Greys', vmin=0, vmax=+1)
-    # # im = ax.imshow(Z, cmap='bwr'), vmin=-5, vmax=+5)
-    # im = ax.imshow(Z, cmap=cmap, vmin=-v, vmax=+v)
-    # ax.figure.colorbar(im, ax=ax, shrink=0.5)
-    # fig.tight_layout()
-    ax.set_xlabel("pos-count")
-    ax.set_ylabel("dist")
-    ax.set_zlabel("error")
-
-    # plt.show()
-    # plt.savefig(f"res/compare/E-{f1}-vs-E-{f2}")
-    # plt.close()
-    surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, antialiased=False) # draw 3d surface
-    plt.savefig(f"res/compare3d/E-{f1}-vs-E-{f2}") # saving fig
-    plt.close()
-
-    # pickle.dump(fig, open('figs/accuracy.pickle', 'wb'))
-    # plt.show()
-
-
-def make_3d():
-    file_list = os.listdir('res/')
-    files = [ # make a list of test errors
-        f'res/{file}' for file in file_list if
-        (file.startswith('edp'))
-    ]
-
-    data = []
-    # read the data of test erroes
-    for file in files:
-        print(file)
-        edp = np.genfromtxt(file, delimiter=',')
-        data.append(edp)
-    
-    # make 3d figures for comparison
-    for i in range(len(data)):
-        for j in range(len(data)):
-            compare3d((data[i], data[j], files[i], files[j]))
 
 
 if __name__ == "__main__":
     make_last_seen_error() # Making last-seen errors
     train_and_test_models() # Train the models and test them and save the test errors
     make_heat_maps() # create comparing heat map
-    make_3d() # create 3d comaprison figures
-    draw_2d_based_on_poscount() # darw 2d error-distance with different poscounts
+    draw_2d_based_on_poscount(False) # darw 2d error-distance with different poscounts

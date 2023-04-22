@@ -133,6 +133,7 @@ class LSTM_Model:
             model.add(tf.keras.layers.Dense(l, activation=a))
         model.add(tf.keras.layers.Dense(config.n_outputs, activation='linear')) # add output layer
         model.compile(optimizer=config.optimizer, loss=config.loss) # compile the model
+        self.episode_duration = episode_duration
         self.model = model
 
     def fit(self, x, y, headers): # fit the data in the model then save the model
@@ -162,4 +163,4 @@ class LSTM_Model:
         np.savetxt(f"{self.get_name('edp-')}", all, delimiter=',')
 
     def get_name(self, prefix=''):
-        return f"{config.res_dir}/{prefix}lstm-{'-'.join(map(str, self.n_layers))}-{'-'.join(self.activations)}-{config.optimizer}-{config.loss}-{config.batch_size}-{config.episode_duration}"
+        return f"{config.res_dir}/{prefix}lstm-{'-'.join(map(str, self.n_layers))}-{'-'.join(self.activations)}-{config.optimizer}-{config.loss}-{config.batch_size}-{self.episode_duration}"
