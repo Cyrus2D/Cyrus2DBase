@@ -206,8 +206,8 @@ def compare_heat_map(args):
             counter_2[i][j] = 1 if counter_2[i][j] == 0 else counter_2[i][j]
 
     # removing data where there is not enough data to comaper (3 is threshhold)
-    pos_count_dist_2 = np.where((counter_1 < 3) * (counter_2 < 3), np.nan, pos_count_dist_2)
-    pos_count_dist_1 = np.where((counter_1 < 3) * (counter_2 < 3), np.nan, pos_count_dist_1)
+    pos_count_dist_2 = np.where((counter_1 < 100) * (counter_2 < 100), np.nan, pos_count_dist_2)
+    pos_count_dist_1 = np.where((counter_1 < 100) * (counter_2 < 100), np.nan, pos_count_dist_1)
 
     # averaging
     pos_count_dist_1 /= counter_1
@@ -286,7 +286,7 @@ def make_heat_maps():
 
 
 # find same poscount tests and comaper them in a 2d-plot
-def pos_count_fig(data, files, pos_count):
+def pos_count_fig(data, files, pos_count, compare_all):
     # make distance-error ranges to compare the errors
     err_range = []
     for i in range(0, 200):
@@ -325,12 +325,16 @@ def pos_count_fig(data, files, pos_count):
         else:
             color = 'blue'
         # ploting
-        ax.plot(err_range[:100], counter[:100] / np.sum(counter[:100]), c=color, label=file)
+        ax.plot(err_range[:100], counter[:100] / np.sum(counter[:100]), c=color, label=file.split('-')[1])
         # ax.plot(err_range, counter / np.sum(counter), color=color, label=file)
 
     ax.legend()
-    plt.title(f"pc={pos_count}")
-    plt.savefig(f'res/pc/{pos_count}.png') # saving
+    plt.title(f"pos-count={pos_count}")
+    # saving
+    if compare_all:
+        plt.savefig(f'res/pc/{pos_count}_all_models.png') 
+    else:
+        plt.savefig(f'res/pc/{pos_count}_best_models.png') 
     # plt.show()
     plt.close()
 
@@ -346,12 +350,14 @@ def draw_2d_based_on_poscount(compare_all=True):
         ]
     else:
         files = [
-            
+            'res/edp-data',
+            'res/edp-lstm-512-256-relu-relu-adam-mse-64-5'
         ]
     
     data = []
     # Reading data of files
     for file in files:
+        print(file)
         edp = np.genfromtxt(file, delimiter=',')
         data.append(edp)
 
@@ -359,12 +365,12 @@ def draw_2d_based_on_poscount(compare_all=True):
     # Creating 2D comparison(error, dist) with different poscounts
     for i in range(20):
         print(f'poscount={i}')
-        pos_count_fig(data, files, i)
+        pos_count_fig(data, files, i, compare_all)
 
 
 
 if __name__ == "__main__":
-    make_last_seen_error() # Making last-seen errors
-    train_and_test_models() # Train the models and test them and save the test errors
+    # make_last_seen_error() # Making last-seen errors
+    # train_and_test_models() # Train the models and test them and save the test errors
     make_heat_maps() # create comparing heat map
-    draw_2d_based_on_poscount(False) # darw 2d error-distance with different poscounts
+    # draw_2d_based_on_poscount(True) # darw 2d error-distance with different poscounts
