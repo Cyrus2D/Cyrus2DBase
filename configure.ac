@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([agent2d],[2022.01],[akky@users.sourceforge.jp])
+AC_INIT([helios-base],[2023.03],[hidehisaakiyama@users.noreply.github.com])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([config])
@@ -22,7 +22,7 @@ AC_PROG_LN_S
 
 # ----------------------------------------------------------
 # check C++
-AX_CXX_COMPILE_STDCXX_14(noext)
+AX_CXX_COMPILE_STDCXX_17(noext)
 
 # ----------------------------------------------------------
 # check boost
@@ -98,6 +98,9 @@ AC_CHECK_FUNCS([floor pow sqrt strerror])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+                 src/player/Makefile
+                 src/coach/Makefile
+                 src/trainer/Makefile
                  src/start.sh
                  src/keepaway.sh
                  src/train.sh],

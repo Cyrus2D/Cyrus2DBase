@@ -76,6 +76,8 @@ usage()
    echo "  --offline-client-mode        starts as an offline client (default: off)"
    echo "  --debug                      writes debug log (default: off)"
    echo "  --debug_DEBUG_CATEGORY       writes DEBUG_CATEGORY to debug log"
+   echo "  --debug-start-time TIME      the start time for recording debug log (default: -1)"
+   echo "  --debug-end-time TIME        the end time for recording debug log (default: 99999999)"
    echo "  --debug-server-connect       connects to the debug server (default: off)"
    echo "  --debug-server-host HOST     specifies debug server host (default: localhost)"
    echo "  --debug-server-port PORT     specifies debug server port (default: 6032)"
@@ -187,6 +189,24 @@ do
     --debug_*)
       debug_opt="${debug_opt} ${1}"
       ;;
+
+    --debug-start-time)
+      if [ $# -lt 2 ]; then
+        usage
+        exit 1
+      fi
+	  debug_opt="${debug_opt} --debug_start_time ${2}"
+	  shift 1
+	  ;;
+
+    --debug-end-time)
+      if [ $# -lt 2 ]; then
+        usage
+        exit 1
+      fi
+	  debug_opt="${debug_opt} --debug_end_time ${2}"
+	  shift 1
+	  ;;
 
     --debug-server-connect)
       debugopt="${debugopt} --debug_server_connect"
