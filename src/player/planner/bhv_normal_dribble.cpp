@@ -251,7 +251,7 @@ IntentionNormalDribble::execute( PlayerAgent * agent )
             return false;
         }
     }
-    else if ( M_dash_step > 0 )
+    if ( M_dash_step > 0 )
     {
         if ( ! doDash( agent ) )
         {
@@ -612,6 +612,7 @@ Bhv_NormalDribble::execute( PlayerAgent * agent )
 
     const ServerParam & SP = ServerParam::i();
 
+    int n_action = 0;
     if ( M_kick_step > 0 )
     {
         Vector2D first_vel = M_target_point - wm.ball().pos();
@@ -638,13 +639,14 @@ Bhv_NormalDribble::execute( PlayerAgent * agent )
         }
 
         agent->doKick( kick_power, kick_angle );
+        n_action++;
 
         dlog.addCircle( Logger::DRIBBLE,
                         wm.ball().pos() + first_vel,
                         0.1,
                         "#0000ff" );
     }
-    else if ( M_turn_step > 0 )
+    if ( M_turn_step > 0 )
     {
         dlog.addText( Logger::DRIBBLE,
                       __FILE__": (execute). first turn: moment=%.2f, n_turn=%d n_dash=%d",
@@ -652,16 +654,16 @@ Bhv_NormalDribble::execute( PlayerAgent * agent )
                       M_turn_step, M_dash_step );
 
         agent->doTurn( M_first_turn_moment );
-
+        n_action++;
     }
-    else if ( M_dash_step > 0 )
+    if ( M_dash_step > 0 && n_action < 2)
     {
         dlog.addText( Logger::DRIBBLE,
                       __FILE__": (execute). first dash: dash power=%.1f dir=%.1f",
                       M_first_dash_power, M_first_dash_angle.degree() );
         agent->doDash( M_first_dash_power, M_first_dash_angle );
     }
-    else
+    if (n_action < 1)
     {
         dlog.addText( Logger::DRIBBLE,
                       __FILE__": (execute). no action steps" );
