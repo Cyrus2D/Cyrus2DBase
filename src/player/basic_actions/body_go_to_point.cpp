@@ -112,29 +112,17 @@ Body_GoToPoint::execute( PlayerAgent * agent )
     //
     // omnidir dash
     //
-    if ( doOmniDash( agent ) )
-    {
-        return true;
-    }
+    // if ( doOmniDash( agent ) )
+    // {
+    //     return true;
+    // }
 
-    //
-    // turn
-    //
-    if ( doTurn( agent ) )
-    {
-        return true;
-    }
-
-    //
-    // dash
-    //
-    if ( doDash( agent ) )
-    {
-        return true;
-    }
-
-    agent->doTurn( 0.0 ); // dummy action
-    return false;
+    bool res1 = doTurn(agent);
+    bool res2 = doDash(agent);
+    bool res = res1 || res2;
+    if (!res)
+        agent->doTurn( 0.0 ); // dummy action
+    return res;
 }
 
 /*-------------------------------------------------------------------*/
@@ -714,7 +702,7 @@ Body_GoToPoint::doDash( PlayerAgent * agent )
     const Vector2D inertia_pos = wm.self().inertiaPoint( M_cycle );
     Vector2D target_rel = M_target_point - inertia_pos;
 
-    AngleDeg accel_angle = wm.self().body();
+    AngleDeg accel_angle = agent->effector().queuedNextSelfBody();
     if ( M_back_mode )
     {
         accel_angle += 180.0;
