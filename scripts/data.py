@@ -187,14 +187,14 @@ def create_episodes_rnn_test(data):
 def read_file(file_name_index):
     print(f'#{file_name_index[1]}')
     file_name = file_name_index[0]
-    xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[:, :]
+    xy = np.genfromtxt(f'/data1/aref/2d/data/9/{file_name}', delimiter=',')[:, :]
     return xy
 
 
 def read_file_rnn(file_name_index):
     print(f'#{file_name_index[1]}')
     file_name = file_name_index[0]
-    xy = np.genfromtxt(f'data/{file_name}', delimiter=',')[:, :]
+    xy = np.genfromtxt(f'/data1/aref/2d/data/9/{file_name}', delimiter=',')[:, :]
     return create_episodes_rnn(xy)
 
 
@@ -229,11 +229,11 @@ def get_test_data():
 def get_data(n=None, m=None):
     all_xy = []
     if n is not None:
-        files = os.listdir('data/')[:n]
+        files = os.listdir('/data1/aref/2d/data/9/')[:n]
     elif m is not None:
-        files = os.listdir('data/')[-m:]
+        files = os.listdir('/data1/aref/2d/data/9/')[-m:]
     else:
-        files = os.listdir('data/')
+        files = os.listdir('/data1/aref/2d/data/9/')
     csv_files = []
     print('Reading-data...', end='')
     i = 0
@@ -253,11 +253,11 @@ def get_data(n=None, m=None):
 def get_data_rnn(n=None, m=None):
     all_xy = []
     if n is not None:
-        files = os.listdir('data/')[:n]
+        files = os.listdir('/data1/aref/2d/data/9/')[:n]
     elif m is not None:
-        files = os.listdir('data/')[-m:]
+        files = os.listdir('/data1/aref/2d/data/9/')[-m:]
     else:
-        files = os.listdir('data/')
+        files = os.listdir('/data1/aref/2d/data/9/')
     csv_files = []
     print('Reading-data...', end='')
     i = 0
@@ -318,15 +318,15 @@ def create_x_y_indexes(headers: dict[str, list[int]]):
     return x_indexes, y_indexes
 
 
-def create_labeled_y(xy, n_label, r):
-    headers = create_headers()
+def create_labeled_y(xy, n_label, r, unum):
+    headers, _ = create_headers()
 
-    opp_pos_noise = np.array(xy[:, headers['opp-5-noise']][:, :-1])
-    opp_pos_full = xy[:, headers['opp-5-full']][:, :-1]
+    opp_pos_noise = np.array(xy[:, headers[f'opp-{unum}-noise'][:2]])
+    opp_pos_full = xy[:, headers[f'opp-{unum}-full'][:2]]
 
     opp_pos_noise = np.where(opp_pos_noise == [-105, -105], [0, 0], opp_pos_noise)
 
-    opp_err = opp_pos_full - opp_pos_noise
+    opp_err = opp_pos_noise - opp_pos_full
     opp_err = np.clip(opp_err, -r / 2, r / 2)
     index = np.floor((opp_err / r) * (n_label - 1)) + n_label / 2
     y_index = np.array(index[:, 0] * n_label + index[:, 1], dtype=np.uint32)
@@ -334,15 +334,6 @@ def create_labeled_y(xy, n_label, r):
     y = np.zeros((opp_pos_noise.shape[0], n_label ** 2))
     y[np.arange(y_index.size), y_index] = 1
 
-    r_indexes = np.arange(y.shape[0])
-    np.random.shuffle(r_indexes)
-    for i in r_indexes[:5]:
-        print(opp_pos_noise[i])
-        print(opp_pos_full[i])
-        print(opp_err[i])
-        print(index[i])
-        print(y_index[i])
-        print(np.argmax(y[i]))
     return y
 
 
@@ -380,7 +371,7 @@ def normalize_data_all(x, y=None):
 
     pos_x_i = [i for i in range(0, 22, 2)]
     pos_y_i = [i for i in range(1, 22, 2)]
-
+    
     if y is not None:
         y[:, pos_x_i] /= config.max_x
         y[:, pos_y_i] /= config.max_y

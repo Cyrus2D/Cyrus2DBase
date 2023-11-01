@@ -36,14 +36,13 @@ def modify(file_name_index):
     np.savetxt(f'{file_name}', xy, delimiter=',')
 
 
-files = os.listdir('data/')
+files = os.listdir('/data1/aref/2d/data/9/')
 i = 0
 all_files = []
 for file in files:
     if file.split('.')[-1] != 'csv':
         continue
     i += 1
-    all_files.append((f'data/{file}', i))
-# config.n_process=20
-# pool = multiprocessing.Pool(config.n_process)
-# pool.map(modify, all_files)
+    all_files.append((f'/data1/aref/2d/data/9/{file}', i))
+pool = multiprocessing.Pool(config.n_process)
+pool.map(modify, all_files)
