@@ -49,7 +49,7 @@ OffensiveDataExtractor::Option::Option() {
 }
 
 
-void OffensiveDataExtractor::init_file(DEState &state) {
+void OffensiveDataExtractor::init_file(DEState &state, int port) {
     #ifdef ODEDebug
     dlog.addText(Logger::BLOCK, "start init_file");
     #endif
@@ -63,7 +63,7 @@ void OffensiveDataExtractor::init_file(DEState &state) {
     std::string dir = "/data1/nader/workspace/robo/base_data/";
     strftime(buffer, sizeof(buffer), "%Y-%m-%d-%H-%M-%S", timeinfo);
     std::string str(buffer);
-    std::string rand_name = std::to_string(SamplePlayer::player_port);
+    std::string rand_name = std::to_string(port);
     str += "_" + std::to_string(state.wm().self().unum()) + "_" + state.wm().theirTeamName() + "_E" + rand_name + ".csv";
 
     fout = std::ofstream((dir + str).c_str());
@@ -148,7 +148,7 @@ std::string OffensiveDataExtractor::get_header() {
     return header;
 }
 
-void OffensiveDataExtractor::generate_save_data(const WorldModel & wm, const CooperativeAction &action,bool update_shoot) {
+void OffensiveDataExtractor::generate_save_data(const WorldModel & wm, const CooperativeAction &action, int port, bool update_shoot) {
     if(!OffensiveDataExtractor::active)
         return;
     if (last_update_cycle == wm.time().cycle())
@@ -166,7 +166,7 @@ void OffensiveDataExtractor::generate_save_data(const WorldModel & wm, const Coo
         return;
 
     if (!fout.is_open()) {
-        init_file(state);
+        init_file(state, port);
     }
     last_update_cycle = wm.time().cycle();
     features.clear();

@@ -56,6 +56,7 @@ public:
     Option option;
     void generate_save_data(const WorldModel & wm,
                             const CooperativeAction &action,
+                            int port,
                             bool update_shoot=false);
     std::string get_header();
 
@@ -72,7 +73,7 @@ public:
 
     std::vector<double> get_data(DEState &state);
 private:
-    void init_file(DEState &state);
+    void init_file(DEState &state, int port);
 
     void extract_ball(DEState &state);
 
