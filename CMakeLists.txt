@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 
 project(helios-base VERSION 2022.01)
 
@@ -7,7 +7,7 @@ if(CMAKE_VERSION VERSION_LESS "3.7.0")
 endif()
 
 # compliler options
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(NOT CMAKE_BUILD_TYPE)
