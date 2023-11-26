@@ -13,7 +13,7 @@ class SampleService(pb2_grpc.SampleServiceServicer):
         # Implement your logic here to get the best action based on the given state
         print(f'{request}')
         # Your code here to calculate the best action
-        best_action = pb2.Action(Dash=pb2.ActionDash(Power=1, Dir=pb2.Ang2D(Angle=1)), Turn=pb2.ActionTurn(Dir=pb2.Ang2D(Angle=1)))
+        best_action = pb2.Action(Dash=pb2.ActionDash(Power=100, Dir=pb2.Ang2D(Angle=0)))
         return best_action
 
     def SetReward(self, request, context):

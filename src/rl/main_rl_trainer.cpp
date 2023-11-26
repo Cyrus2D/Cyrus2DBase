@@ -42,7 +42,7 @@
 
 namespace {
 
-RLTrainer agent;
+
 std::shared_ptr< rcsc::AbstractClient > client;
 
 /*-------------------------------------------------------------------*/
@@ -50,7 +50,7 @@ void
 sig_exit_handle( int )
 {
     std::cerr << "Killed. Exiting trainer..." << std::endl;
-    agent.finalize();
+    // agent.finalize();
     std::exit( EXIT_FAILURE );
 }
 
@@ -61,6 +61,8 @@ sig_exit_handle( int )
 int
 main( int argc, char ** argv )
 {
+    RLTrainer agent;
+    std::cout << "RL Trainer main" << std::endl;
     struct sigaction sig_action ;
     sig_action.sa_handler = &sig_exit_handle ;
     sig_action.sa_flags = 0;
@@ -81,6 +83,7 @@ main( int argc, char ** argv )
         rcsc::CmdLineParser cmd_parser( argc, argv );
         if ( ! agent.init( cmd_parser ) )
         {
+            std::cout<<"agent init failed"<<std::endl;
             return EXIT_FAILURE;
         }
     }
