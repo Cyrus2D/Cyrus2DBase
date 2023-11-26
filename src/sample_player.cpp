@@ -259,7 +259,7 @@ SamplePlayer::actionImpl()
     //
     // update action chain
     //
-    ActionChainHolder::instance().update( world() );
+    ActionChainHolder::instance().update( world(), this->config().port() );
 
 
     //
