@@ -1,0 +1,62 @@
+
+syntax = "proto3";
+
+package cyrus;
+
+message Vec2D {
+  float X = 1;
+  float Y = 2;
+}
+
+message Ang2D {
+    float Angle = 1;
+}
+
+message State {
+    Vec2D Position = 1;
+    Ang2D Body = 2;
+    int32 Cycle = 3;
+}
+
+message ActionDash {
+    float Power = 1;
+    Ang2D Dir = 2;
+}
+
+message ActionTurn {
+    Ang2D Dir = 1;
+}
+
+message Action {
+    oneof action {
+        ActionDash Dash = 1;
+        ActionTurn Turn = 2;
+    }
+}
+
+message Reward {
+    float Value = 1;
+    int32 Cycle = 2;
+    int32 Unum = 3;
+    bool Done = 4;
+}
+
+message StartEpisode{
+    int32 Cycle = 1;
+}
+
+message TrainerRequest {
+    oneof request {
+        StartEpisode StartEpisode = 1;
+        Reward Reward = 2;
+    }
+}
+
+message OK {
+    bool OK = 1;
+}
+
+service SampleService {
+    rpc GetBestAction(State) returns (Action) {}
+    rpc SetReward(Reward) returns (OK) {}
+}
