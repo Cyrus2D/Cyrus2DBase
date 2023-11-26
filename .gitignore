@@ -4,4 +4,8 @@ sample_player
 sample_trainer
 start.sh
 train.sh
-
+build/
+myenv/
+.vscode/settings.json
+scripts/rl_grpc_server/grpc_code/__pycache__/cyrus_pb2_grpc.cpython-310.pyc
+scripts/rl_grpc_server/grpc_code/__pycache__/cyrus_pb2.cpython-310.pyc
