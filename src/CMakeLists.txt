@@ -196,3 +196,5 @@ file(COPY
   formations-dt formations-keeper formations-taker player.conf coach.conf start-debug.sh start-offline.sh unmark_dnn_weights.txt
   DESTINATION ${PROJECT_BINARY_DIR}/src/
   )
+
+  add_subdirectory(rl)
