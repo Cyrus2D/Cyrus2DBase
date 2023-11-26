@@ -143,7 +143,7 @@ ActionChainGraph::ActionChainGraph( const FieldEvaluator::ConstPtr & evaluator,
 
  */
 void
-ActionChainGraph::calculateResult( const WorldModel & wm )
+ActionChainGraph::calculateResult( const WorldModel & wm, int port )
 {
     debugPrintCurrentState( wm );
 
@@ -176,7 +176,7 @@ ActionChainGraph::calculateResult( const WorldModel & wm )
 
     ActionStatePair *first_layer = M_result.begin().base();
     if (first_layer->action().category() == CooperativeAction::Pass)
-        OffensiveDataExtractor::i().generate_save_data(wm, first_layer->action());
+        OffensiveDataExtractor::i().generate_save_data(wm, first_layer->action(), port);
 
     write_chain_log( ">>>>> best chain: ",
                      wm,

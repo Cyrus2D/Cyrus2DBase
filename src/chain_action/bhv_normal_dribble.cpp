@@ -212,7 +212,7 @@ IntentionNormalDribble::execute( PlayerAgent * agent )
 
         ShortDribbleGenerator::instance().setQueuedAction( wm, current_action );
 
-        ActionChainHolder::instance().update( wm );
+        ActionChainHolder::instance().update( wm, agent->config().port() );
         const ActionChainGraph & search_result = ActionChainHolder::i().graph();
         const CooperativeAction & first_action = search_result.getFirstAction();
 
