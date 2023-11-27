@@ -4,7 +4,6 @@ from reply_buffer_simple import Buffer
 from transit import Transition
 
 
-
 class QTable:
     def __init__(self, buffer_size=100000, train_interval_step=1):
         self.q_table = []

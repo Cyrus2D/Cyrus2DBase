@@ -3,7 +3,7 @@ from table import QTable
 import threading
 import cyrus_pb2_grpc as pb2_grpc
 import cyrus_pb2 as pb2
-
+from ddpg import DeepAC
 from threading import RLock
 
 lock = RLock()
@@ -117,7 +117,9 @@ class StepPreData:
 
 class Table:
     def __init__(self):
-        self.rl = QTable()
+        # self.rl = QTable()
+        self.rl = DeepAC(observation_size=self.observation_size, action_size=self.action_size)
+        self.rl.create_model_actor_critic()
         self.data: dict[int, StepPreData] = {}
         self.results = Results()
 
