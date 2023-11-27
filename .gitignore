@@ -9,3 +9,8 @@ myenv/
 .vscode/settings.json
 scripts/rl_grpc_server/grpc_code/__pycache__/cyrus_pb2_grpc.cpython-310.pyc
 scripts/rl_grpc_server/grpc_code/__pycache__/cyrus_pb2.cpython-310.pyc
+scripts/rl_grpc_server/grpc_code/__pycache__/main_table.cpython-310.pyc
+scripts/rl_grpc_server/grpc_code/__pycache__/reply_buffer_simple.cpython-310.pyc
+scripts/rl_grpc_server/grpc_code/__pycache__/table.cpython-310.pyc
+scripts/rl_grpc_server/grpc_code/__pycache__/transit.cpython-310.pyc
+scripts/rl_grpc_server/grpc_code/.vscode/launch.json
