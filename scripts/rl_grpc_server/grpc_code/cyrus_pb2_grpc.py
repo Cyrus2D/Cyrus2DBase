@@ -19,9 +19,9 @@ class SampleServiceStub(object):
                 request_serializer=cyrus__pb2.State.SerializeToString,
                 response_deserializer=cyrus__pb2.Action.FromString,
                 )
-        self.SetReward = channel.unary_unary(
-                '/cyrus.SampleService/SetReward',
-                request_serializer=cyrus__pb2.Reward.SerializeToString,
+        self.SetTrainerRequest = channel.unary_unary(
+                '/cyrus.SampleService/SetTrainerRequest',
+                request_serializer=cyrus__pb2.TrainerRequest.SerializeToString,
                 response_deserializer=cyrus__pb2.OK.FromString,
                 )
 
@@ -35,7 +35,7 @@ class SampleServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetReward(self, request, context):
+    def SetTrainerRequest(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -49,9 +49,9 @@ def add_SampleServiceServicer_to_server(servicer, server):
                     request_deserializer=cyrus__pb2.State.FromString,
                     response_serializer=cyrus__pb2.Action.SerializeToString,
             ),
-            'SetReward': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetReward,
-                    request_deserializer=cyrus__pb2.Reward.FromString,
+            'SetTrainerRequest': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetTrainerRequest,
+                    request_deserializer=cyrus__pb2.TrainerRequest.FromString,
                     response_serializer=cyrus__pb2.OK.SerializeToString,
             ),
     }
@@ -82,7 +82,7 @@ class SampleService(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def SetReward(request,
+    def SetTrainerRequest(request,
             target,
             options=(),
             channel_credentials=None,
@@ -92,8 +92,8 @@ class SampleService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/cyrus.SampleService/SetReward',
-            cyrus__pb2.Reward.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/cyrus.SampleService/SetTrainerRequest',
+            cyrus__pb2.TrainerRequest.SerializeToString,
             cyrus__pb2.OK.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

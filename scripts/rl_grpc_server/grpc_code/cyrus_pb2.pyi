@@ -19,14 +19,16 @@ class Ang2D(_message.Message):
     def __init__(self, Angle: _Optional[float] = ...) -> None: ...
 
 class State(_message.Message):
-    __slots__ = ["Position", "Body", "Cycle"]
+    __slots__ = ["Position", "Body", "Cycle", "BallPosition"]
     POSITION_FIELD_NUMBER: _ClassVar[int]
     BODY_FIELD_NUMBER: _ClassVar[int]
     CYCLE_FIELD_NUMBER: _ClassVar[int]
+    BALLPOSITION_FIELD_NUMBER: _ClassVar[int]
     Position: Vec2D
     Body: Ang2D
     Cycle: int
-    def __init__(self, Position: _Optional[_Union[Vec2D, _Mapping]] = ..., Body: _Optional[_Union[Ang2D, _Mapping]] = ..., Cycle: _Optional[int] = ...) -> None: ...
+    BallPosition: Vec2D
+    def __init__(self, Position: _Optional[_Union[Vec2D, _Mapping]] = ..., Body: _Optional[_Union[Ang2D, _Mapping]] = ..., Cycle: _Optional[int] = ..., BallPosition: _Optional[_Union[Vec2D, _Mapping]] = ...) -> None: ...
 
 class ActionDash(_message.Message):
     __slots__ = ["Power", "Dir"]
@@ -50,31 +52,25 @@ class Action(_message.Message):
     Turn: ActionTurn
     def __init__(self, Dash: _Optional[_Union[ActionDash, _Mapping]] = ..., Turn: _Optional[_Union[ActionTurn, _Mapping]] = ...) -> None: ...
 
-class Reward(_message.Message):
-    __slots__ = ["Value", "Cycle", "Unum", "Done"]
-    VALUE_FIELD_NUMBER: _ClassVar[int]
+class TrainerRequest(_message.Message):
+    __slots__ = ["Reward", "Cycle", "Unum", "Done", "Start"]
+    REWARD_FIELD_NUMBER: _ClassVar[int]
     CYCLE_FIELD_NUMBER: _ClassVar[int]
     UNUM_FIELD_NUMBER: _ClassVar[int]
     DONE_FIELD_NUMBER: _ClassVar[int]
-    Value: float
+    START_FIELD_NUMBER: _ClassVar[int]
+    Reward: float
     Cycle: int
     Unum: int
     Done: bool
-    def __init__(self, Value: _Optional[float] = ..., Cycle: _Optional[int] = ..., Unum: _Optional[int] = ..., Done: bool = ...) -> None: ...
+    Start: bool
+    def __init__(self, Reward: _Optional[float] = ..., Cycle: _Optional[int] = ..., Unum: _Optional[int] = ..., Done: bool = ..., Start: bool = ...) -> None: ...
 
 class StartEpisode(_message.Message):
     __slots__ = ["Cycle"]
     CYCLE_FIELD_NUMBER: _ClassVar[int]
     Cycle: int
     def __init__(self, Cycle: _Optional[int] = ...) -> None: ...
-
-class TrainerRequest(_message.Message):
-    __slots__ = ["StartEpisode", "Reward"]
-    STARTEPISODE_FIELD_NUMBER: _ClassVar[int]
-    REWARD_FIELD_NUMBER: _ClassVar[int]
-    StartEpisode: StartEpisode
-    Reward: Reward
-    def __init__(self, StartEpisode: _Optional[_Union[StartEpisode, _Mapping]] = ..., Reward: _Optional[_Union[Reward, _Mapping]] = ...) -> None: ...
 
 class OK(_message.Message):
     __slots__ = ["OK"]
