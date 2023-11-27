@@ -33,11 +33,11 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include <grpcpp/grpcpp.h>
-#include "../../build/src/cyrus.grpc.pb.h"
+#include "../../build/src/rl/cyrus.grpc.pb.h"
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using cyrus::Reward;
+using cyrus::TrainerRequest;
 using cyrus::OK;
 using cyrus::SampleService;
 

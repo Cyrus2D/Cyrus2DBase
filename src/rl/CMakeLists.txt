@@ -112,10 +112,6 @@ add_executable(rl_player
         simple_rl_agent.cpp
         )
 
-# find_path(HIREDIS_HEADER hiredis)
-# find_library(HIREDIS_LIB hiredis)
-# find_path(REDIS_PLUS_PLUS_HEADER sw)
-# find_library(REDIS_PLUS_PLUS_LIB redis++)
 find_package(Threads REQUIRED)
 
 target_include_directories(rl_player
@@ -126,8 +122,6 @@ target_include_directories(rl_player
         PUBLIC
         ${Boost_INCLUDE_DIRS}
         ${LIBRCSC_INCLUDE_DIR}
-        # ${HIREDIS_HEADER}
-        # ${REDIS_PLUS_PLUS_HEADER}
         )
 
 target_link_libraries(rl_player
@@ -142,8 +136,6 @@ target_link_libraries(rl_player
         ${LIBRCSC_LIB}
         Boost::system
         ZLIB::ZLIB
-        # ${HIREDIS_LIB}
-        # ${REDIS_PLUS_PLUS_LIB}
         Threads::Threads
         )
 
@@ -152,7 +144,6 @@ set_target_properties(rl_player
         RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/src
         )
 
-# rl trainer
 add_executable(rl_trainer
         main_rl_trainer.cpp
         rl_trainer.cpp
@@ -162,13 +153,9 @@ target_include_directories(rl_trainer
         PRIVATE
         ${PROJECT_SOURCE_DIR}/src/
         ${PROJECT_BINARY_DIR}
-          # PRIVATE
-
         PUBLIC
         ${Boost_INCLUDE_DIRS}
         ${LIBRCSC_INCLUDE_DIR}
-        # ${HIREDIS_HEADER}
-        # ${REDIS_PLUS_PLUS_HEADER}
         )
 
 target_link_libraries(rl_trainer
@@ -183,8 +170,6 @@ target_link_libraries(rl_trainer
         ${LIBRCSC_LIB}
         Boost::system
         ZLIB::ZLIB
-        # ${HIREDIS_LIB}
-        # ${REDIS_PLUS_PLUS_LIB}
         Threads::Threads
         )
 

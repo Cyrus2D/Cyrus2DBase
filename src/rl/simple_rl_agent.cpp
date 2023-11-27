@@ -5,6 +5,7 @@
 #include "simple_rl_agent.h"
 #include "rl_feature_gen.h"
 #include <stdexcept>
+#include <rcsc/geom/vector_2d.h>
 
 SimpleRLAgent * SimpleRLAgent::inst = nullptr;
 
@@ -18,7 +19,7 @@ void SimpleRLAgent::do_action(rcsc::PlayerAgent * agent){
     position->set_x(wm.self().pos().x);
     position->set_y(wm.self().pos().y);
     auto body = state.mutable_body();
-    body->set_angle(wm.self().body().degree());
+    body->set_angle((wm.self().body() - (rcsc::Vector2D(0, 0) - wm.self().pos()).th()).degree());
     ClientContext context;
     Action action;
     stub_->GetBestAction(&context, state, &action);

@@ -191,15 +191,28 @@ RLTrainer::doRL()
     auto status_rewards = status_rewards_done.first;
     bool done = status_rewards_done.second;
     M_counter += 1;
-
-    Reward reward;
-    reward.set_value(status_rewards[1]);
-    reward.set_cycle(world().time().cycle());
-    reward.set_unum(1);
-    reward.set_done(done);
+//    0 start
+//    1 normal
+//    2 end goal
+//    3 end out
+//    4 end time
+    TrainerRequest request;
+    // message TrainerRequest {
+    //     float Reward = 1;
+    //     int32 Cycle = 2;
+    //     int32 Unum = 3;
+    //     bool Done = 4;
+    //     bool Start = 5;
+    // }
+    request.set_reward(status_rewards[1]);
+    request.set_cycle(world().time().cycle());
+    request.set_unum(1);
+    request.set_done(done);
+    request.set_start(status_rewards[0] == 0);
     ClientContext context;
     OK ok;
-    stub_->SetReward(&context, reward, &ok);
+    
+    stub_->SetTrainerRequest(&context, request, &ok);
 
     if (done)
     {
@@ -224,13 +237,13 @@ RLTrainer::calcRewards()
     rcsc::Vector2D ball_pos = world().ball().pos();
     const CoachPlayerObject * player = world().teammate(1);
     rcsc::Vector2D player_pos = player->pos();
-    Vector2D target_pos = world().ball().pos();
+    Vector2D target_pos = Vector2D(0, 0);//world().ball().pos();
     double diff_dist = 0.0;
     if (M_last_pos.isValid())
         diff_dist = M_last_pos.dist(target_pos) - player_pos.dist(target_pos);
     M_last_pos = player_pos;
 
-    double target_r = 10.0;
+    double target_r = 5.0;
 //    0 start
 //    1 normal
 //    2 end goal
