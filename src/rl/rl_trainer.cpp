@@ -52,7 +52,7 @@ RLTrainer::RLTrainer()
         : TrainerAgent()
 {
     M_counter = 0;
-    M_max_episode_length = 100;
+    M_max_episode_length = 200;
     channel = grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials());
     stub_ = SampleService::NewStub(channel);
 }
@@ -237,7 +237,7 @@ RLTrainer::calcRewards()
     rcsc::Vector2D ball_pos = world().ball().pos();
     const CoachPlayerObject * player = world().teammate(1);
     rcsc::Vector2D player_pos = player->pos();
-    Vector2D target_pos = Vector2D(0, 0);//world().ball().pos();
+    Vector2D target_pos = world().ball().pos();
     double diff_dist = 0.0;
     if (M_last_pos.isValid())
         diff_dist = M_last_pos.dist(target_pos) - player_pos.dist(target_pos);

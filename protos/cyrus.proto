@@ -8,39 +8,56 @@ message Vec2D {
   float Y = 2;
 }
 
-message Ang2D {
-    float Angle = 1;
-}
-
-message State {
+message GoToPointStateMessage {
     Vec2D Position = 1;
-    Ang2D Body = 2;
-    int32 Cycle = 3;
-    Vec2D BallPosition = 4;
+    float Body = 2;
+    float BodyDiff = 3;
 }
 
-message ActionDash {
+message GoToBallStateMessage {
+    Vec2D Position = 1;
+    float Body = 2;
+    Vec2D BallPosition = 3;
+    float BodyDiff = 4;
+}
+
+message RawListMessage {
+    repeated float Value = 1;
+}
+
+message StateMessage {
+    int32 Cycle = 1;
+    oneof State {
+        RawListMessage RawList = 2;
+        GoToPointStateMessage GoToPointState = 3;
+        GoToBallStateMessage GoToBallState = 4;
+    }
+}
+
+message ActionDashMessage {
     float Power = 1;
-    Ang2D Dir = 2;
+    float Dir = 2;
 }
 
-message ActionTurn {
-    Ang2D Dir = 1;
+message ActionTurnMessage {
+    float Dir = 1;
 }
 
 message Action {
     oneof action {
-        ActionDash Dash = 1;
-        ActionTurn Turn = 2;
+        RawListMessage RawList = 1;
+        ActionDashMessage Dash = 2;
+        ActionTurnMessage Turn = 3;
     }
 }
 
 message TrainerRequest {
-    float Reward = 1;
-    int32 Cycle = 2;
+    int32 Cycle = 1;
+    float Reward = 2;
     int32 Unum = 3;
     bool Done = 4;
     bool Start = 5;
+    int32 Statud = 6;
 }
 
 message StartEpisode{
@@ -52,6 +69,6 @@ message OK {
 }
 
 service SampleService {
-    rpc GetBestAction(State) returns (Action) {}
+    rpc GetBestAction(StateMessage) returns (Action) {}
     rpc SetTrainerRequest(TrainerRequest) returns (OK) {}
 }

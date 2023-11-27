@@ -15,13 +15,13 @@ class SampleService(pb2_grpc.SampleServiceServicer):
     def __init__(self):
         self.tabel = Table()
 
-    def GetBestAction(self, request:pb2.State, context):
+    def GetBestAction(self, request:pb2.StateMessage, context):
         with lock:
             self.tabel.AddPlayerInfo(request)
-            action = self.tabel.GetRandomAction(request)
+            action = self.tabel.GetAction(request)
             return action
 
-    def SetTrainerRequest(self, request, context):
+    def SetTrainerRequest(self, request: pb2.TrainerRequest, context):
         with lock:
             self.tabel.AddTrainerInfo(request)
             return pb2.OK()

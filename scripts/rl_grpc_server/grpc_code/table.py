@@ -34,6 +34,7 @@ class QTable:
         return action * 10.0 / 360.0
 
     def get_best_action_d(self, state_c):
+        print(state_c)
         state_d = state_c[0]
         max_q = self.q_table[state_d][0]
         a_i = 0

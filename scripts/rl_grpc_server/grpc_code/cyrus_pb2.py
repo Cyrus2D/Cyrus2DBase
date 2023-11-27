@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0b\x63yrus.proto\x12\x05\x63yrus\"\x1d\n\x05Vec2D\x12\t\n\x01X\x18\x01 \x01(\x02\x12\t\n\x01Y\x18\x02 \x01(\x02\"\x16\n\x05\x41ng2D\x12\r\n\x05\x41ngle\x18\x01 \x01(\x02\"v\n\x05State\x12\x1e\n\x08Position\x18\x01 \x01(\x0b\x32\x0c.cyrus.Vec2D\x12\x1a\n\x04\x42ody\x18\x02 \x01(\x0b\x32\x0c.cyrus.Ang2D\x12\r\n\x05\x43ycle\x18\x03 \x01(\x05\x12\"\n\x0c\x42\x61llPosition\x18\x04 \x01(\x0b\x32\x0c.cyrus.Vec2D\"6\n\nActionDash\x12\r\n\x05Power\x18\x01 \x01(\x02\x12\x19\n\x03\x44ir\x18\x02 \x01(\x0b\x32\x0c.cyrus.Ang2D\"\'\n\nActionTurn\x12\x19\n\x03\x44ir\x18\x01 \x01(\x0b\x32\x0c.cyrus.Ang2D\"X\n\x06\x41\x63tion\x12!\n\x04\x44\x61sh\x18\x01 \x01(\x0b\x32\x11.cyrus.ActionDashH\x00\x12!\n\x04Turn\x18\x02 \x01(\x0b\x32\x11.cyrus.ActionTurnH\x00\x42\x08\n\x06\x61\x63tion\"Z\n\x0eTrainerRequest\x12\x0e\n\x06Reward\x18\x01 \x01(\x02\x12\r\n\x05\x43ycle\x18\x02 \x01(\x05\x12\x0c\n\x04Unum\x18\x03 \x01(\x05\x12\x0c\n\x04\x44one\x18\x04 \x01(\x08\x12\r\n\x05Start\x18\x05 \x01(\x08\"\x1d\n\x0cStartEpisode\x12\r\n\x05\x43ycle\x18\x01 \x01(\x05\"\x10\n\x02OK\x12\n\n\x02OK\x18\x01 \x01(\x08\x32x\n\rSampleService\x12.\n\rGetBestAction\x12\x0c.cyrus.State\x1a\r.cyrus.Action\"\x00\x12\x37\n\x11SetTrainerRequest\x12\x15.cyrus.TrainerRequest\x1a\t.cyrus.OK\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0b\x63yrus.proto\x12\x05\x63yrus\"\x1d\n\x05Vec2D\x12\t\n\x01X\x18\x01 \x01(\x02\x12\t\n\x01Y\x18\x02 \x01(\x02\"W\n\x15GoToPointStateMessage\x12\x1e\n\x08Position\x18\x01 \x01(\x0b\x32\x0c.cyrus.Vec2D\x12\x0c\n\x04\x42ody\x18\x02 \x01(\x02\x12\x10\n\x08\x42odyDiff\x18\x03 \x01(\x02\"z\n\x14GoToBallStateMessage\x12\x1e\n\x08Position\x18\x01 \x01(\x0b\x32\x0c.cyrus.Vec2D\x12\x0c\n\x04\x42ody\x18\x02 \x01(\x02\x12\"\n\x0c\x42\x61llPosition\x18\x03 \x01(\x0b\x32\x0c.cyrus.Vec2D\x12\x10\n\x08\x42odyDiff\x18\x04 \x01(\x02\"\x1f\n\x0eRawListMessage\x12\r\n\x05Value\x18\x01 \x03(\x02\"\xbe\x01\n\x0cStateMessage\x12\r\n\x05\x43ycle\x18\x01 \x01(\x05\x12(\n\x07RawList\x18\x02 \x01(\x0b\x32\x15.cyrus.RawListMessageH\x00\x12\x36\n\x0eGoToPointState\x18\x03 \x01(\x0b\x32\x1c.cyrus.GoToPointStateMessageH\x00\x12\x34\n\rGoToBallState\x18\x04 \x01(\x0b\x32\x1b.cyrus.GoToBallStateMessageH\x00\x42\x07\n\x05State\"/\n\x11\x41\x63tionDashMessage\x12\r\n\x05Power\x18\x01 \x01(\x02\x12\x0b\n\x03\x44ir\x18\x02 \x01(\x02\" \n\x11\x41\x63tionTurnMessage\x12\x0b\n\x03\x44ir\x18\x01 \x01(\x02\"\x90\x01\n\x06\x41\x63tion\x12(\n\x07RawList\x18\x01 \x01(\x0b\x32\x15.cyrus.RawListMessageH\x00\x12(\n\x04\x44\x61sh\x18\x02 \x01(\x0b\x32\x18.cyrus.ActionDashMessageH\x00\x12(\n\x04Turn\x18\x03 \x01(\x0b\x32\x18.cyrus.ActionTurnMessageH\x00\x42\x08\n\x06\x61\x63tion\"j\n\x0eTrainerRequest\x12\r\n\x05\x43ycle\x18\x01 \x01(\x05\x12\x0e\n\x06Reward\x18\x02 \x01(\x02\x12\x0c\n\x04Unum\x18\x03 \x01(\x05\x12\x0c\n\x04\x44one\x18\x04 \x01(\x08\x12\r\n\x05Start\x18\x05 \x01(\x08\x12\x0e\n\x06Statud\x18\x06 \x01(\x05\"\x1d\n\x0cStartEpisode\x12\r\n\x05\x43ycle\x18\x01 \x01(\x05\"\x10\n\x02OK\x12\n\n\x02OK\x18\x01 \x01(\x08\x32\x7f\n\rSampleService\x12\x35\n\rGetBestAction\x12\x13.cyrus.StateMessage\x1a\r.cyrus.Action\"\x00\x12\x37\n\x11SetTrainerRequest\x12\x15.cyrus.TrainerRequest\x1a\t.cyrus.OK\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -22,22 +22,26 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
   _globals['_VEC2D']._serialized_start=22
   _globals['_VEC2D']._serialized_end=51
-  _globals['_ANG2D']._serialized_start=53
-  _globals['_ANG2D']._serialized_end=75
-  _globals['_STATE']._serialized_start=77
-  _globals['_STATE']._serialized_end=195
-  _globals['_ACTIONDASH']._serialized_start=197
-  _globals['_ACTIONDASH']._serialized_end=251
-  _globals['_ACTIONTURN']._serialized_start=253
-  _globals['_ACTIONTURN']._serialized_end=292
-  _globals['_ACTION']._serialized_start=294
-  _globals['_ACTION']._serialized_end=382
-  _globals['_TRAINERREQUEST']._serialized_start=384
-  _globals['_TRAINERREQUEST']._serialized_end=474
-  _globals['_STARTEPISODE']._serialized_start=476
-  _globals['_STARTEPISODE']._serialized_end=505
-  _globals['_OK']._serialized_start=507
-  _globals['_OK']._serialized_end=523
-  _globals['_SAMPLESERVICE']._serialized_start=525
-  _globals['_SAMPLESERVICE']._serialized_end=645
+  _globals['_GOTOPOINTSTATEMESSAGE']._serialized_start=53
+  _globals['_GOTOPOINTSTATEMESSAGE']._serialized_end=140
+  _globals['_GOTOBALLSTATEMESSAGE']._serialized_start=142
+  _globals['_GOTOBALLSTATEMESSAGE']._serialized_end=264
+  _globals['_RAWLISTMESSAGE']._serialized_start=266
+  _globals['_RAWLISTMESSAGE']._serialized_end=297
+  _globals['_STATEMESSAGE']._serialized_start=300
+  _globals['_STATEMESSAGE']._serialized_end=490
+  _globals['_ACTIONDASHMESSAGE']._serialized_start=492
+  _globals['_ACTIONDASHMESSAGE']._serialized_end=539
+  _globals['_ACTIONTURNMESSAGE']._serialized_start=541
+  _globals['_ACTIONTURNMESSAGE']._serialized_end=573
+  _globals['_ACTION']._serialized_start=576
+  _globals['_ACTION']._serialized_end=720
+  _globals['_TRAINERREQUEST']._serialized_start=722
+  _globals['_TRAINERREQUEST']._serialized_end=828
+  _globals['_STARTEPISODE']._serialized_start=830
+  _globals['_STARTEPISODE']._serialized_end=859
+  _globals['_OK']._serialized_start=861
+  _globals['_OK']._serialized_end=877
+  _globals['_SAMPLESERVICE']._serialized_start=879
+  _globals['_SAMPLESERVICE']._serialized_end=1006
 # @@protoc_insertion_point(module_scope)

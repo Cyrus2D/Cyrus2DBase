@@ -10,14 +10,19 @@ lock = RLock()
 
 
 class State:
-    def __init__(self, grpcState):
+    def __init__(self, grpcState: pb2.StateMessage):
         self.grpcState = grpcState
         self.rawState = None
         self.ConvertToRawState()
     
     def ConvertToRawState(self):
-        if isinstance(self.grpcState, pb2.State):
-            self.rawState = [int((self.grpcState.Body.Angle + 180.0) / 10.0)]
+        if self.grpcState.WhichOneof('State') == 'GoToBallState':
+            self.rawState = [int((self.grpcState.GoToBallState.BodyDiff + 180.0) / 10.0)]
+        elif self.grpcState.WhichOneof('State') == 'RawList':
+            self.rawState = [int((self.grpcState.RawList.Value[0] + 180.0) / 10.0)]
+        elif self.grpcState.WhichOneof('State') == 'GoToPointState':
+            self.rawState = [int((self.grpcState.GoToPointState.BodyDiff + 180.0) / 10.0)]
+            
 
 class Action:
     def __init__(self, rawAction, grpcActionType):
@@ -28,9 +33,9 @@ class Action:
     
     def ConvertToGrpcAction(self):
         if self.grpcActionType == 'Dash':
-            self.grpcAction = pb2.Action(Dash=pb2.ActionDash(Power=100, Dir=pb2.Ang2D(Angle=self.rawAction * 10)))
+            self.grpcAction = pb2.Action(Dash=pb2.ActionDashMessage(Power=100, Dir=self.rawAction * 10))
         elif self.grpcActionType == 'Turn':
-            self.grpcAction = pb2.Action(Turn=pb2.ActionTurn(Dir=pb2.Ang2D(Angle=self.rawAction * 10)))
+            self.grpcAction = pb2.Action(Turn=pb2.ActionTurnMessage(Dir=self.rawAction * 10))
 
 class Results:
     def __init__(self):
@@ -132,12 +137,11 @@ class Table:
                 self.AddDataToBuffer(cycle)
             self.results.AddResult(trainerRequest.Reward, trainerRequest.Done)
 
-    def AddPlayerInfo(self, playerState: pb2.State):
+    def AddPlayerInfo(self, playerState: pb2.StateMessage):
         with lock:
-            # print('add player info', playerState.Cycle, playerState.Body.Angle)
             cycle = playerState.Cycle
             if cycle not in self.data.keys():
-                self.data[cycle] = StepPreData()
+                    self.data[cycle] = StepPreData()
             state = State(playerState)
             complete = self.data[cycle].AddState(state.rawState)
             if complete:
@@ -148,7 +152,7 @@ class Table:
             complete = self.data[cycle].AddNextState(state.rawState)
             if complete:
                 self.AddDataToBuffer(cycle)
-
+            
     def AddPlayerAction(self, cycle, action):
         # print('add player action', cycle, action)
         if cycle not in self.data.keys():
@@ -162,7 +166,7 @@ class Table:
         self.rl.add_to_buffer(self.data[cycle].state, self.data[cycle].action, self.data[cycle].reward, self.data[cycle].next_state)
         del self.data[cycle]
 
-    def GetRandomAction(self, grpcState: pb2.State):
+    def GetAction(self, grpcState: pb2.StateMessage):
         with lock:
             epsilon = 0.1
             state = State(grpcState).rawState

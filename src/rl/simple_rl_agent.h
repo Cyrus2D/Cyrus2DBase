@@ -15,7 +15,7 @@ using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 using cyrus::SampleService;
-using cyrus::State;
+using cyrus::StateMessage;
 using cyrus::Action;
 
 class SimpleRLAgent {

@@ -16,7 +16,7 @@ class SampleServiceStub(object):
         """
         self.GetBestAction = channel.unary_unary(
                 '/cyrus.SampleService/GetBestAction',
-                request_serializer=cyrus__pb2.State.SerializeToString,
+                request_serializer=cyrus__pb2.StateMessage.SerializeToString,
                 response_deserializer=cyrus__pb2.Action.FromString,
                 )
         self.SetTrainerRequest = channel.unary_unary(
@@ -46,7 +46,7 @@ def add_SampleServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'GetBestAction': grpc.unary_unary_rpc_method_handler(
                     servicer.GetBestAction,
-                    request_deserializer=cyrus__pb2.State.FromString,
+                    request_deserializer=cyrus__pb2.StateMessage.FromString,
                     response_serializer=cyrus__pb2.Action.SerializeToString,
             ),
             'SetTrainerRequest': grpc.unary_unary_rpc_method_handler(
@@ -76,7 +76,7 @@ class SampleService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/cyrus.SampleService/GetBestAction',
-            cyrus__pb2.State.SerializeToString,
+            cyrus__pb2.StateMessage.SerializeToString,
             cyrus__pb2.Action.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
