@@ -16,6 +16,7 @@ message State {
     Vec2D Position = 1;
     Ang2D Body = 2;
     int32 Cycle = 3;
+    Vec2D BallPosition = 4;
 }
 
 message ActionDash {
@@ -34,22 +35,16 @@ message Action {
     }
 }
 
-message Reward {
-    float Value = 1;
+message TrainerRequest {
+    float Reward = 1;
     int32 Cycle = 2;
     int32 Unum = 3;
     bool Done = 4;
+    bool Start = 5;
 }
 
 message StartEpisode{
     int32 Cycle = 1;
-}
-
-message TrainerRequest {
-    oneof request {
-        StartEpisode StartEpisode = 1;
-        Reward Reward = 2;
-    }
 }
 
 message OK {
@@ -58,5 +53,5 @@ message OK {
 
 service SampleService {
     rpc GetBestAction(State) returns (Action) {}
-    rpc SetReward(Reward) returns (OK) {}
+    rpc SetTrainerRequest(TrainerRequest) returns (OK) {}
 }
