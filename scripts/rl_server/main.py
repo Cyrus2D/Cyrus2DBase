@@ -20,7 +20,7 @@ class StepData:
 class PythonRLTrainer:
     def __init__(self, db_number):
         self.player_count = 1
-        self.observation_size = 6
+        self.observation_size = 1
         self.action_size = 1
         self.rl = DeepAC(observation_size=self.observation_size, action_size=self.action_size)
         self.rl.create_model_actor_critic()

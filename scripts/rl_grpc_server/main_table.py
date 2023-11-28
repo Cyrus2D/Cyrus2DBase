@@ -19,7 +19,8 @@ class State:
         if self.grpcState.WhichOneof('State') == 'GoToBallState':
             self.rawState = [int((self.grpcState.GoToBallState.BodyDiff + 180.0) / 10.0)]
         elif self.grpcState.WhichOneof('State') == 'RawList':
-            self.rawState = [int((self.grpcState.RawList.Value[0] + 180.0) / 10.0)]
+            # self.rawState = [int((self.grpcState.RawList.Value[0] + 180.0) / 10.0)]
+            self.rawState = [(self.grpcState.RawList.Value[0] + 180.0) / 360.0]
         elif self.grpcState.WhichOneof('State') == 'GoToPointState':
             self.rawState = [int((self.grpcState.GoToPointState.BodyDiff + 180.0) / 10.0)]
             
@@ -33,7 +34,7 @@ class Action:
     
     def ConvertToGrpcAction(self):
         if self.grpcActionType == 'Dash':
-            self.grpcAction = pb2.Action(Dash=pb2.ActionDashMessage(Power=100, Dir=self.rawAction * 10))
+            self.grpcAction = pb2.Action(Dash=pb2.ActionDashMessage(Power=100, Dir=self.rawAction * 180))
         elif self.grpcActionType == 'Turn':
             self.grpcAction = pb2.Action(Turn=pb2.ActionTurnMessage(Dir=self.rawAction * 10))
 
@@ -118,6 +119,8 @@ class StepPreData:
 class Table:
     def __init__(self):
         # self.rl = QTable()
+        self.observation_size = 1
+        self.action_size = 1
         self.rl = DeepAC(observation_size=self.observation_size, action_size=self.action_size)
         self.rl.create_model_actor_critic()
         self.data: dict[int, StepPreData] = {}
