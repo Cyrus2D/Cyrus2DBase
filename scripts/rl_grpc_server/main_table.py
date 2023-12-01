@@ -34,7 +34,7 @@ class Action:
     
     def ConvertToGrpcAction(self):
         if self.grpcActionType == 'Dash':
-            self.grpcAction = pb2.Action(Dash=pb2.ActionDashMessage(Power=100, Dir=self.rawAction * 180))
+            self.grpcAction = pb2.Action(Dash=pb2.ActionDashMessage(Power=100, Dir=self.rawAction[0] * 180))
         elif self.grpcActionType == 'Turn':
             self.grpcAction = pb2.Action(Turn=pb2.ActionTurnMessage(Dir=self.rawAction * 10))
 
@@ -121,8 +121,8 @@ class Table:
         # self.rl = QTable()
         self.observation_size = 1
         self.action_size = 1
-        self.rl = DeepAC(observation_size=self.observation_size, action_size=self.action_size)
-        self.rl.create_model_actor_critic()
+        self.rl = DeepAC()
+        # self.rl.create_model_actor_critic()
         self.data: dict[int, StepPreData] = {}
         self.results = Results()
 
@@ -137,10 +137,10 @@ class Table:
             if cycle not in self.data.keys():
                 self.data[cycle] = StepPreData()
             self.data[cycle].done = trainerRequest.Done
-            complete = self.data[cycle].AddReward(trainerRequest.Reward)
+            complete = self.data[cycle].AddReward(trainerRequest.Reward / 100.0)
             if complete:
                 self.AddDataToBuffer(cycle)
-            self.results.AddResult(trainerRequest.Reward, trainerRequest.Done)
+            self.results.AddResult(trainerRequest.Reward / 100.0, trainerRequest.Done)
 
     def AddPlayerInfo(self, playerState: pb2.StateMessage):
         with lock:
@@ -168,14 +168,14 @@ class Table:
 
     def AddDataToBuffer(self, cycle):
         # print('>>add data to buffer', cycle, self.data[cycle].state, self.data[cycle].action, self.data[cycle].reward, self.data[cycle].next_state)
-        self.rl.add_to_buffer(self.data[cycle].state, self.data[cycle].action, self.data[cycle].reward, self.data[cycle].next_state)
+        self.rl.add_to_buffer(self.data[cycle].state, self.data[cycle].action, self.data[cycle].reward, self.data[cycle].next_state, self.data[cycle].done)
         del self.data[cycle]
 
     def GetAction(self, grpcState: pb2.StateMessage):
         with lock:
-            epsilon = 0.1
+            epsilon = 0.2
             state = State(grpcState).rawState
-            rawAction = self.rl.GetRandomBestAction(state, epsilon)
-            self.AddPlayerAction(grpcState.Cycle, rawAction)
+            rawAction = self.rl.GetRandomBestAction(state)
+            self.AddPlayerAction(grpcState.Cycle, rawAction[0])
             action = Action(rawAction, 'Dash')
             return action.grpcAction
