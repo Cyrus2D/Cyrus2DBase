@@ -8,6 +8,7 @@ from reply_buffer_simple import Buffer
 import random
 import random
 import copy
+import numpy as np
 
 
 #Set Hyperparameters
@@ -19,9 +20,9 @@ update_iteration=1
 tau=0.001 # tau for soft updating
 gamma=0.99 # discount factor
 directory = './'
-hidden1=20 # hidden layer for actor
-hidden2=64 #hiiden laye for critic
-state_dim = 1
+hidden1=2 # hidden layer for actor
+hidden2=10 #hiiden laye for critic
+state_dim = 2
 action_dim = 1
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -83,7 +84,16 @@ class Replay_buffer():
 
         return np.array(state), np.array(next_state), np.array(action), np.array(reward).reshape(-1, 1), np.array(done).reshape(-1, 1)
 
+class ClipLayer(nn.Module):
+    def __init__(self, min_value, max_value):
+        super(ClipLayer, self).__init__()
+        self.min_value = min_value
+        self.max_value = max_value
 
+    def forward(self, x):
+        return torch.clamp(x, min=self.min_value, max=self.max_value)
+    
+    
 class Actor(nn.Module):
     """
     The Actor model takes in a state observation as input and 
@@ -97,15 +107,18 @@ class Actor(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(n_states, hidden1), 
             nn.ReLU(), 
-            nn.ReLU(), 
-            nn.Linear(hidden1, hidden1), 
-            nn.ReLU(), 
-            nn.Linear(hidden1, 1)
+            # nn.Linear(hidden1, hidden1), 
+            # nn.ReLU(), 
+            nn.Linear(hidden1, 1),
+            nn.Tanh()
+                        # nn.BatchNorm1d(hidden1),  # Add BatchNorm1d layer
+
+            # ClipLayer(min_value=-0.1, max_value=0.1)
         )
-        
+
     def forward(self, state):
         o = self.net(state)
-        print(o)
+        # o = torch.clamp(o, -0.1, 0.1)  # Clip the output between -0.1 and 0.1
         return o
 
 class Critic(nn.Module):
@@ -124,15 +137,18 @@ class Critic(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(n_states + action_dim, hidden2), 
             nn.ReLU(), 
+            # nn.Linear(hidden2, hidden2), 
+            # nn.ReLU(), 
             nn.Linear(hidden2, hidden2), 
             nn.ReLU(), 
-            nn.Linear(hidden2, hidden2), 
-            nn.ReLU(), 
-            nn.Linear(hidden2, action_dim)
+            nn.Linear(hidden2, action_dim),
+            # nn.Sigmoid()
+                        # nn.BatchNorm1d(hidden1),  # Add BatchNorm1d layer
+
         )
         
     def forward(self, state, action):
-        state = state.reshape(64, 1)
+        state = state.reshape(64, 2)
         action = action.reshape(64, 1)
         return self.net(torch.cat((state, action), 1))
 
@@ -186,18 +202,25 @@ class DDPG(object):
         self.actor = Actor(state_dim, action_dim, hidden1).to(device)
         self.actor_target = Actor(state_dim, action_dim,  hidden1).to(device)
         self.actor_target.load_state_dict(self.actor.state_dict())
-        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=3e-3)
+        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=0.001)
 
         self.critic = Critic(state_dim, action_dim,  hidden2).to(device)
         self.critic_target = Critic(state_dim, action_dim,  hidden2).to(device)
         self.critic_target.load_state_dict(self.critic.state_dict())
-        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=2e-2)
+        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=0.01)
         # learning rate
 
         self.num_critic_update_iteration = 0
         self.num_actor_update_iteration = 0
         self.num_training = 0
+        self.actor.apply(self.weights_init)
+        self.critic.apply(self.weights_init)
 
+    def weights_init(self, m):
+        if isinstance(m, nn.Linear):
+            nn.init.xavier_uniform_(m.weight.data)
+            nn.init.constant_(m.bias.data, 0.1)
+            
     def select_action(self, state):
         """
         takes the current state as input and returns an action to take in that state. 
@@ -208,7 +231,10 @@ class DDPG(object):
         state = torch.FloatTensor(state.reshape(1, -1)).to(device)
         return self.actor(state).cpu().data.numpy().flatten()
 
-
+    sum_current_Q = 0
+    sum_q_error = 0
+    count = 0
+    sum_actor_loss = 0
     def update(self):
         """
         updates the actor and critic networks using a batch of samples from the replay buffer. 
@@ -242,9 +268,16 @@ class DDPG(object):
 
             # Get current Q estimate
             current_Q = self.critic.forward(state, action)
-
+            #average of current_Q
+            current_Q_avg = current_Q.mean()
+            DDPG.sum_current_Q += current_Q_avg
+            DDPG.count += 1
+            
             # Compute critic loss
             critic_loss = F.mse_loss(current_Q, target_Q)
+            DDPG.sum_q_error += critic_loss.mean()
+            
+            
             
             # Optimize the critic
             self.critic_optimizer.zero_grad()
@@ -252,8 +285,14 @@ class DDPG(object):
             self.critic_optimizer.step()
 
             # Compute actor loss as the negative mean Q value using the critic network and the actor network
-            actor_loss = -self.critic(state, self.actor(state)).mean()
-            print(critic_loss, actor_loss)
+            actor_loss = -self.critic(state, self.actor(state)).mean() 
+            DDPG.sum_actor_loss += actor_loss.mean()
+            if DDPG.count % 1000 == 0:
+                print(DDPG.sum_current_Q / 1000, DDPG.sum_q_error / 1000, DDPG.sum_actor_loss / 1000)
+                DDPG.sum_current_Q = 0
+                DDPG.count = 0            
+                DDPG.sum_q_error = 0
+                DDPG.sum_actor_loss = 0
             # Optimize the actor
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
@@ -290,16 +329,90 @@ class DDPG(object):
         
 
 class DeepAC:
+    count = 0
+    sum_action = 0
+    sum_action2 = 0
+    currect_action = 0
     def __init__(self) -> None:
         global state_dim, action_dim
         self.agent = DDPG(state_dim, action_dim)
         
     def GetRandomBestAction(self, state):
-        action = self.agent.select_action(state)
-        action = (action + np.random.normal(0, 1, size=action_dim)).clip(-1, 1)
+        DeepAC.count += 1
+        action = self.agent.select_action(state) / 10.0
+        DeepAC.sum_action += abs(action)
+        DeepAC.sum_action2 += action
+        if state[0] < state[1] and action > 0:
+            DeepAC.currect_action += 1
+        if state[0] > state[1] and action < 0:
+            DeepAC.currect_action += 1
+        if DeepAC.count % 1000 == 0:
+            print(DeepAC.count, DeepAC.sum_action / 1000, DeepAC.sum_action2 / 1000, DeepAC.currect_action / 1000)
+            DeepAC.sum_action = 0
+            DeepAC.sum_action2 = 0
+            DeepAC.currect_action = 0
+        action = (action + np.random.normal(0, 0.01, size=action_dim)).clip(-0.05, 0.05)
         return action
     
     def add_to_buffer(self, state, action, reward, next_state, done):
         self.agent.replay_buffer.push((state, next_state, action, reward, np.float32(np.array([done]))))
         self.agent.update()
  
+ 
+class Game:
+    def __init__(self):
+        self.player_position = 0.0
+        self.goal_position = 0.0
+        self.episode_steps = 100
+        self.step_count = 0
+
+    def reset(self):
+        self.player_position = 0.0
+        self.goal_position = np.random.uniform(-1, 1)
+        self.step_count = 0
+        return self.get_state()
+
+    def get_state(self):
+        return np.array([float(self.player_position), float(self.goal_position)])
+
+    def step(self, action):
+        self.step_count += 1
+        self.player_position += action
+
+        if self.player_position < -1 or self.player_position > 1:
+            done = True
+            reward = -2
+        elif abs(self.player_position - self.goal_position) < 0.2:
+            done = True
+            reward = 1
+        else:
+            done = False
+            reward = 0
+
+        if self.step_count >= self.episode_steps:
+            done = True
+
+        if not done:
+            reward += -0.01 if abs(self.player_position - self.goal_position) < abs(self.player_position + action - self.goal_position) else +0.01
+
+        return self.get_state(), reward, done
+
+game = Game()
+agent = DeepAC()
+
+rewards_100 = 0
+for episode in range(10000):
+    state = game.reset()
+    sum_reward = 0
+    for step in range(100):
+        action = agent.GetRandomBestAction(state)
+        next_state, reward, done = game.step(action)
+        sum_reward += reward
+        agent.add_to_buffer(state, action, reward, next_state, done)
+        state = next_state
+        if done:
+            break
+    rewards_100 += sum_reward
+    if episode % 100 == 0:
+        print(episode, rewards_100 / 100)
+        rewards_100 = 0

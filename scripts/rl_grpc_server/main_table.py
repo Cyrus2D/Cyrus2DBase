@@ -3,7 +3,7 @@ from table import QTable
 import threading
 import cyrus_pb2_grpc as pb2_grpc
 import cyrus_pb2 as pb2
-from ddpg import DeepAC
+from ddpgtens import DeepAC
 from threading import RLock
 
 lock = RLock()
@@ -121,7 +121,7 @@ class Table:
         # self.rl = QTable()
         self.observation_size = 1
         self.action_size = 1
-        self.rl = DeepAC()
+        self.rl = DeepAC(1, 1)
         # self.rl.create_model_actor_critic()
         self.data: dict[int, StepPreData] = {}
         self.results = Results()
@@ -175,7 +175,7 @@ class Table:
         with lock:
             epsilon = 0.2
             state = State(grpcState).rawState
-            rawAction = self.rl.GetRandomBestAction(state)
-            self.AddPlayerAction(grpcState.Cycle, rawAction[0])
-            action = Action(rawAction, 'Dash')
+            rawAction = self.rl.get_random_action(state)
+            self.AddPlayerAction(grpcState.Cycle, rawAction)
+            action = Action(rawAction[0], 'Dash')
             return action.grpcAction
