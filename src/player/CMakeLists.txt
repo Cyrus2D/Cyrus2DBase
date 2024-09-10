@@ -104,10 +104,8 @@ add_executable(sample_player
   sample_player.cpp
   strategy.cpp
   main_player.cpp
-  data_extractor/DEState.cpp
-  data_extractor/offensive_data_extractor.cpp
-  bhv_unmark.cpp
-  bhv_basic_block.cpp
+        bhv_basic_block.cpp
+        setting.cpp
   )
 
 

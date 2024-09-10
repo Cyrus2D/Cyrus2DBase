@@ -63,6 +63,7 @@
 #include "basic_actions/neck_turn_to_ball_or_scan.h"
 #include "basic_actions/view_synch.h"
 #include "basic_actions/kick_table.h"
+#include "setting.h"
 
 #include <rcsc/formation/formation.h>
 #include <rcsc/player/intercept_table.h>
@@ -96,6 +97,7 @@ SamplePlayer::SamplePlayer()
     : PlayerAgent(),
       M_communication()
 {
+//    Setting::i().load_from_json_string(R"({"formation_name":"442"})");
     M_field_evaluator = createFieldEvaluator();
     M_action_generator = createActionGenerator();
 
@@ -164,6 +166,7 @@ SamplePlayer::~SamplePlayer()
 bool
 SamplePlayer::initImpl( CmdLineParser & cmd_parser )
 {
+    Setting::i().print();
     bool result = PlayerAgent::initImpl( cmd_parser );
 
     // read additional options
@@ -196,9 +199,21 @@ SamplePlayer::initImpl( CmdLineParser & cmd_parser )
         return false;
     }
 
-    if ( ! Strategy::instance().read( config().configDir() ) )
+    if ( ! Strategy::instance().read( "./formations/" + Setting::i().formation_name ) )
     {
         std::cerr << "***ERROR*** Failed to read team strategy." << std::endl;
+        return false;
+    }
+
+    if ( ! Strategy::instance().readWinner( "./formations/" + Setting::i().winner_formation_name ) )
+    {
+        std::cerr << "***ERROR*** Failed to read team strategy (winner)." << std::endl;
+        return false;
+    }
+
+    if ( ! Strategy::instance().readLoser( "./formations/" + Setting::i().loser_formation_name ) )
+    {
+        std::cerr << "***ERROR*** Failed to read team strategy (loser)." << std::endl;
         return false;
     }
 
@@ -804,47 +819,57 @@ SamplePlayer::createActionGenerator() const
     //
     // shoot
     //
-    g->addGenerator( new ActGen_RangeActionChainLengthFilter
+    if ( Setting::i().offensive_kick_planner_use_sample_shot )
+        g->addGenerator( new ActGen_RangeActionChainLengthFilter
                      ( new ActGen_Shoot(),
                        2, ActGen_RangeActionChainLengthFilter::MAX ) );
+    
 
     //
     // strict check pass
     //
-    g->addGenerator( new ActGen_MaxActionChainLengthFilter
-                     ( new ActGen_StrictCheckPass(), 1 ) );
+    if ( Setting::i().offensive_kick_planner_use_direct_pass 
+        || Setting::i().offensive_kick_planner_use_lead_pass
+        || Setting::i().offensive_kick_planner_use_through_pass)
+        g->addGenerator( new ActGen_MaxActionChainLengthFilter
+                        ( new ActGen_StrictCheckPass(), 1 ) );
 
     //
     // cross
     //
-    g->addGenerator( new ActGen_MaxActionChainLengthFilter
-                     ( new ActGen_Cross(), 1 ) );
+    if ( Setting::i().offensive_kick_planner_use_cross_pass )
+        g->addGenerator( new ActGen_MaxActionChainLengthFilter
+                        ( new ActGen_Cross(), 1 ) );
 
     //
     // direct pass
     //
-    // g->addGenerator( new ActGen_RangeActionChainLengthFilter
-    //                  ( new ActGen_DirectPass(),
-    //                    2, ActGen_RangeActionChainLengthFilter::MAX ) );
+    if ( Setting::i().offensive_kick_planner_use_sample_pass )
+        g->addGenerator( new ActGen_RangeActionChainLengthFilter
+                        ( new ActGen_DirectPass(),
+                        2, ActGen_RangeActionChainLengthFilter::MAX ) );
 
     //
     // short dribble
     //
-    g->addGenerator( new ActGen_MaxActionChainLengthFilter
-                     ( new ActGen_ShortDribble(), 1 ) );
+    if ( Setting::i().offensive_kick_planner_use_short_dribble)
+        g->addGenerator( new ActGen_MaxActionChainLengthFilter
+                        ( new ActGen_ShortDribble(), 1 ) );
 
     //
     // self pass (long dribble)
     //
-    g->addGenerator( new ActGen_MaxActionChainLengthFilter
-                     ( new ActGen_SelfPass(), 1 ) );
+    if ( Setting::i().offensive_kick_planner_use_long_dribble )
+        g->addGenerator( new ActGen_MaxActionChainLengthFilter
+                        ( new ActGen_SelfPass(), 1 ) );
 
     //
     // simple dribble
     //
-    // g->addGenerator( new ActGen_RangeActionChainLengthFilter
-    //                  ( new ActGen_SimpleDribble(),
-    //                    2, ActGen_RangeActionChainLengthFilter::MAX ) );
+    if ( Setting::i().offensive_kick_planner_use_sample_dribble )
+        g->addGenerator( new ActGen_RangeActionChainLengthFilter
+                        ( new ActGen_SimpleDribble(),
+                        2, ActGen_RangeActionChainLengthFilter::MAX ) );
 
     return ActionGenerator::ConstPtr( g );
 }

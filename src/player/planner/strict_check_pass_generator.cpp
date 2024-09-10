@@ -43,6 +43,7 @@
 
 #include "pass.h"
 #include "field_analyzer.h"
+#include "../setting.h"
 
 #include <rcsc/player/world_model.h>
 #include <rcsc/player/intercept_table.h>
@@ -490,28 +491,38 @@ StrictCheckPassGenerator::createCourses( const WorldModel & wm )
 {
     const ReceiverCont::iterator end = M_receiver_candidates.end();
 
-    M_pass_type = 'D';
-    for ( ReceiverCont::iterator p = M_receiver_candidates.begin();
-          p != end;
-          ++p )
+    if ( Setting::i().offensive_kick_planner_use_direct_pass )
     {
-        createDirectPass( wm, *p );
+        M_pass_type = 'D';
+        for ( ReceiverCont::iterator p = M_receiver_candidates.begin();
+            p != end;
+            ++p )
+        {
+            createDirectPass( wm, *p );
+        }
     }
 
-    M_pass_type = 'L';
-    for ( ReceiverCont::iterator p = M_receiver_candidates.begin();
-          p != end;
-          ++p )
+    if ( Setting::i().offensive_kick_planner_use_lead_pass )
     {
-        createLeadingPass( wm, *p );
+        M_pass_type = 'L';
+        for ( ReceiverCont::iterator p = M_receiver_candidates.begin();
+            p != end;
+            ++p )
+        {
+            createLeadingPass( wm, *p );
+        }
     }
+    
 
-    M_pass_type = 'T';
-    for ( ReceiverCont::iterator p = M_receiver_candidates.begin();
-          p != end;
-          ++p )
+    if ( Setting::i().offensive_kick_planner_use_through_pass )
     {
-        createThroughPass( wm, *p );
+        M_pass_type = 'T';
+        for ( ReceiverCont::iterator p = M_receiver_candidates.begin();
+            p != end;
+            ++p )
+        {
+            createThroughPass( wm, *p );
+        }
     }
 }
 

@@ -29,6 +29,7 @@
 #endif
 
 #include "sample_player.h"
+#include "setting.h"
 
 #include <rcsc/common/abstract_client.h>
 #include <rcsc/param/cmd_line_parser.h>
@@ -59,6 +60,8 @@ sig_exit_handle( int )
 int
 main( int argc, char **argv )
 {
+    Setting::i().read_from_arguments(argc, argv);
+
     struct sigaction sig_action;
     sig_action.sa_handler = &sig_exit_handle;
     sig_action.sa_flags = 0;

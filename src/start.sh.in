@@ -14,18 +14,27 @@ echo " Copyright 2021-2022.  Omid Amini and Nader Zare"
 echo " All rights reserved."
 echo "******************************************************************"
 
+HOMEDIR=$(dirname "$0")
 
-LIBPATH=@LIBRCSC_LIBDIR@
+cd $HOMEDIR || { echo "Can not find HOMEDIR[${HOMEDIR}]"; exit 1; }
+
+LIBPATH=./lib
+if [ -z "$LIBPATH" ]; then
+  echo "Error: LIBPATH is not set."
+  exit 1
+fi
 if [ x"$LIBPATH" != x ]; then
   if [ x"$LD_LIBRARY_PATH" = x ]; then
     LD_LIBRARY_PATH=$LIBPATH
-  else
-    LD_LIBRARY_PATH=$LIBPATH:$LD_LIBRARY_PATH
   fi
   export LD_LIBRARY_PATH
+else
+    echo "Error: LIBPATH is not set."
+    exit 1
 fi
 
-DIR=`dirname $0`
+
+DIR='.'
 
 player="${DIR}/sample_player"
 coach="${DIR}/sample_coach"
@@ -41,6 +50,10 @@ config_dir="${DIR}/formations-dt"
 
 coach_conf="${DIR}/coach.conf"
 team_graphic="--use_team_graphic off"
+
+json_config=""
+config_path=""
+encoding="json"
 
 number=11
 usecoach="true"
@@ -69,7 +82,9 @@ usage()
    echo "  -t, --teamname TEAMNAME      specifies team name"
    echo "  -n, --number NUMBER          specifies the number of players"
    echo "  -u, --unum UNUM              specifies the uniform number of players"
-   echo "  -C, --without-coach          specifies not to run the coach"
+   echo "  -c,                          config path"
+   echo "  -j,                          json config"
+   echo "  -e,                          encoding (default: json)"
    echo "  -f, --formation DIR          specifies the formation directory"
    echo "  --team-graphic FILE          specifies the team graphic xpm file"
    echo "  --offline-logging            writes offline client log (default: off)"
@@ -151,8 +166,19 @@ do
       shift 1
       ;;
 
-    -C|--without-coach)
-      usecoach="false"
+    -c)
+      config_path="${2}"
+      shift 1
+      ;;
+
+    -j)
+      json_config="${2}"
+      shift 1
+      ;;
+
+    -e)
+      encoding="${2}"
+      shift 1
       ;;
 
     -f|--formation)
@@ -318,6 +344,13 @@ opt="${opt} --debug_server_host ${debug_server_host}"
 opt="${opt} --debug_server_port ${debug_server_port}"
 opt="${opt} ${offline_logging}"
 opt="${opt} ${debugopt}"
+opt="${opt} -e ${encoding}"
+if [ X"${json_config}" != X'' ]; then
+  opt="${opt} -j ${json_config}"
+fi
+if [ X"${config_path}" != X'' ]; then
+  opt="${opt} -c ${config_path}"
+fi
 
 ping -c 1 $host
 

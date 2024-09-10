@@ -1,0 +1,76 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - cyrus2d
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential libboost-all-dev cmake
+
+      - name: Install librcsc
+        run: |
+          git clone https://github.com/helios-base/librcsc.git
+          cd librcsc
+          git checkout 19175f339dcb5c3f61b56a8c1bff5345109f22ef
+          mkdir build
+          cd build
+          cmake ..
+          make
+          sudo make install
+
+      - name: Build project
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          make
+          cd bin
+          mkdir lib
+          cp ~/local/lib/libr* lib/
+
+      - name: Create zip file
+        run: |
+          cd build
+          mv bin cyrus
+          chmod 777 cyrus/* -R
+          zip -r cyrus.zip cyrus
+          mv cyrus.zip ../
+      - name: Get latest tag
+        id: get_latest_tag
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const latestTag = await github.rest.repos.listTags({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 1,
+              page: 1
+            });
+            const latestTagName = latestTag.data.length > 0 ? latestTag.data[0].name : "0";
+            const newTag = (parseInt(latestTagName, 10) + 1).toString();
+            core.setOutput('new_tag', newTag);
+      # ------------------------------------------- Release
+      - name: Create Release
+        id: create_release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "${{ github.workspace }}/cyrus.zip"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.get_latest_tag.outputs.new_tag }}
+          release_name: ${{ steps.get_latest_tag.outputs.new_tag }}
+          release_body: "FOXSY CYRUS BASE"
+          draft: false
+          prerelease: false
